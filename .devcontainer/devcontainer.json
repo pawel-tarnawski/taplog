@@ -1,0 +1,42 @@
+{
+  "name": "Taplog",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright",
+        "vitest.explorer",
+        "ms-vscode.vscode-typescript-next",
+        "christian-kohler.path-intellisense",
+        "usernamehw.errorlens",
+        "streetsidesoftware.code-spell-checker",
+        "github.vscode-github-actions",
+        "claude.claude-code"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "tailwindCSS.experimental.classRegex": [
+          ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+        ]
+      }
+    }
+  },
+  "forwardPorts": [5173, 4173],
+  "portsAttributes": {
+    "5173": { "label": "Vite dev server", "onAutoForward": "openBrowser" },
+    "4173": { "label": "Vite preview" }
+  },
+  "postCreateCommand": "sudo corepack enable && corepack prepare pnpm@latest --activate && git config user.email 'tarnawskipawel@Sgmail.com' && git config user.name 'Pawel Tarnawski'",
+  "remoteUser": "node"
+}
