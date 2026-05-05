@@ -17,7 +17,7 @@
         "usernamehw.errorlens",
         "streetsidesoftware.code-spell-checker",
         "github.vscode-github-actions",
-        "claude.claude-code"
+        "anthropic.claude-code"
       ],
       "settings": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
