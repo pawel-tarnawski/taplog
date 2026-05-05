@@ -282,8 +282,8 @@ App
 
 Update this section as phases complete.
 
-- [ ] Phase 0 — Scaffold (Vite + config files + directory structure)
-- [ ] Phase 1 — Store & logic (`taplogStore`, `persistence`, unit tests)
+- [x] Phase 0 — Scaffold (Vite + config files + directory structure)
+- [x] Phase 1 — Store & logic (`taplogStore`, `persistence`, unit tests)
 - [ ] Phase 2 — Components (full UI, RTL tests)
 - [ ] Phase 3 — PWA & polish (manifest, service worker, a11y audit)
 - [ ] Phase 4 — CI/CD (GitHub Actions, E2E tests, Cloudflare deploy)
