@@ -3,16 +3,21 @@ import { useTaplogStore } from '../../store/taplogStore'
 
 interface Props {
   onClose: () => void
+  triggerRef?: React.RefObject<HTMLElement | null>
 }
 
-export function AddActivityModal({ onClose }: Props) {
+export function AddActivityModal({ onClose, triggerRef }: Props) {
   const addActivity = useTaplogStore((s) => s.addActivity)
   const [name, setName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    const trigger = triggerRef?.current ?? null
     inputRef.current?.focus()
-  }, [])
+    return () => {
+      trigger?.focus()
+    }
+  }, [triggerRef])
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -58,14 +63,14 @@ export function AddActivityModal({ onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm text-muted transition-colors hover:text-primary"
+              className="min-h-[48px] rounded-lg px-4 text-sm text-muted transition-colors hover:text-primary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim()}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-40"
+              className="min-h-[48px] rounded-lg bg-accent px-4 text-sm font-medium text-white transition-opacity disabled:opacity-40"
             >
               Add
             </button>
