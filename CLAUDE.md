@@ -97,7 +97,10 @@ interface TaplogState {
 interface Activity {
   id: string              // nanoid()
   name: string
-  accumulatedMs: number   // total ms recorded before current run
+  code?: string           // optional ≤5-char label shown on narrow tiles, e.g. "WORK"
+  color: string           // hex from TILE_COLORS palette, assigned on creation
+  isPause?: boolean       // Pause tile — stops running timer, no time tracking
+  accumulatedMs: number   // total ms recorded before current run (always 0 for Pause tile)
   isRunning: boolean
   startedAt: number | null // Date.now() when last started; null when paused
 }
@@ -124,8 +127,9 @@ interface TaplogStore {
   totalMs: () => number
 
   // Actions
-  addActivity: (name: string) => void
-  renameActivity: (id: string, name: string) => void
+  addActivity: (name: string, code?: string) => void  // assigns next palette color
+  addPauseTile: () => void                             // adds isPause:true tile (amber color)
+  renameActivity: (id: string, name: string, code?: string) => void
   deleteActivity: (id: string) => void
   toggleTimer: (id: string) => void
   resetActivity: (id: string) => void
@@ -170,12 +174,13 @@ It uses `requestAnimationFrame` internally, not `setInterval`, to avoid drift.
 
 ```
 App
-├── TileGrid                     fills 80-85% viewport width
-│   ├── ActivityTile × N
-│   │   ├── tile name (editable on double-tap/click)
-│   │   ├── timer display (HH:MM:SS, updates every second)
-│   │   ├── large central tap button (start / pause)
-│   │   └── context menu (⋯) → rename / reset tile / delete
+├── TileGrid                     fills ALL available space (full height + width)
+│   ├── ActivityTile × N         layout computed to keep tiles square-ish
+│   │   ├── name / code          dominant label at top (name if wide, code if narrow)
+│   │   ├── large central button  start/pause — primary tap target; "● Tracking" when active
+│   │   ├── HH:MM:SS timer       bottom, smaller, secondary (hidden on Pause tile)
+│   │   └── context menu (⋯)    → rename+code / reset tile / delete
+│   ├── PauseTile                glows amber when nothing is tracking
 │   └── AddTileButton            always the last card in the grid
 └── Sidebar                      fixed right panel; bottom bar on mobile (≤640px)
     ├── date display
@@ -185,37 +190,105 @@ App
     └── reset-all button
 ```
 
+### TileGrid layout algorithm
+
+The grid must fill **both dimensions** of the main area. Column and row count are computed from the total tile count (activities + Add button):
+
+```typescript
+function gridLayout(count: number): { cols: number; rows: number } {
+  // Aim for square-ish cells given the viewport aspect ratio.
+  // Simple heuristic: pick cols = ceil(sqrt(count)), rows = ceil(count / cols).
+  const cols = Math.ceil(Math.sqrt(count))
+  const rows = Math.ceil(count / cols)
+  return { cols, rows }
+}
+// Grid style: grid-template-columns: repeat(cols, 1fr)
+//             grid-template-rows:    repeat(rows, 1fr)
+//             height: 100%
+```
+
+Tiles with `isBreak: true` render with a coffee-cup icon instead of a play/pause arrow, and a distinct muted style (lower saturation accent).
+
+### Tile visual hierarchy (top → bottom)
+
+Regular activity tile:
+```
+┌─────────────────────┐
+│ NAME or CODE   [⋯] │  ← large, dominant; shows code when tile width < threshold
+│                     │
+│      [ ▶ / ⏸ ]     │  ← 80×80 min circular button, tile's accent color
+│   ● Tracking        │  ← visible only when tracking (not "Running")
+│     00:00:00        │  ← DM Mono, bottom, secondary
+└─────────────────────┘
+```
+
+Pause tile (when nothing is tracking — glows amber):
+```
+┌─────────────────────┐  ← amber border + glow + pulse
+│      Pause     [⋯] │
+│                     │
+│       [ ⏸ ]        │  ← amber, pulsing
+│                     │
+│  (no timer shown)   │
+└─────────────────────┘
+```
+
 ---
 
 ## Design system
 
-**Theme:** dark, deep charcoal background.
+**Theme:** dark, warm-tinted background (slightly warmer than pure charcoal to reduce harshness).
 
 ```css
 /* CSS variables — define in index.css */
---bg-base:       #0f1117;   /* page background */
---bg-tile:       #1a1d27;   /* idle tile */
---bg-tile-hover: #1f2335;
---bg-sidebar:    #13151f;
---accent:        #3b82f6;   /* electric blue — running state */
---accent-glow:   rgba(59, 130, 246, 0.35);
---text-primary:  #e2e8f0;
---text-muted:    #64748b;
+--bg-base:       #0e1016;   /* page background — very slightly warm tint */
+--bg-tile:       #181b26;   /* idle tile */
+--bg-tile-hover: #1e2133;
+--bg-sidebar:    #12141e;
+--text-primary:  #ddd8f0;   /* warm off-white, replaces cold #e2e8f0 */
+--text-muted:    #6b6d85;
 --danger:        #ef4444;
 --success:       #22c55e;
+/* --accent is per-tile; no global --accent for tile coloring */
 ```
+
+**Neon palette — auto-assigned in order, cycling:**
+```typescript
+export const TILE_COLORS = [
+  '#3b82f6', // blue
+  '#a855f7', // purple
+  '#ec4899', // pink
+  '#f59e0b', // amber
+  '#06b6d4', // cyan
+  '#22c55e', // green
+  '#f43f5e', // rose
+  '#6366f1', // indigo
+] as const
+// Activity created at index N gets TILE_COLORS[activities.length % TILE_COLORS.length]
+// Pause tile always gets amber (#f59e0b)
+```
+
+**Idle tile:** `border: 1px solid {color}` at 25% opacity.  
+**Hover tile:** `border: 1px solid {color}` at 50% opacity.  
+**Tracking tile:** `border: 2px solid {color}` + `box-shadow: 0 0 24px {color}59` + `@keyframes tile-pulse`.  
+**Pause tile (nothing tracking):** amber glow + pulse, ⏸ icon centered, no timer counter.  
+**Pause tile (something tracking):** dim amber border, ⏸ icon, acts as stop button.
+
+**Button borders:** use `border: 1px solid` (NOT Tailwind `ring-*`) everywhere — `ring-*` clips on macOS Safari.
+
+**Language:** use **"Tracking"** not "Running" throughout — aria-labels, text indicators, comments.
+
+**Sidebar total timer color:**
+- Total < 8 h → orange `#fb923c`
+- Total ≥ 8 h → green `#4ade80`
 
 **Typography:**
 - Timer digits: `DM Mono` (Google Fonts)
-- UI labels and names: `Inter` (Google Fonts)
+- Names, labels: `Inter` (Google Fonts)
 
-**Running tile:** vivid `--accent` border + `box-shadow: 0 0 24px var(--accent-glow)` + subtle pulse `@keyframes` on the border glow.
+**Tap button:** min 80×80 px, circular. Background: tile color at 15% opacity (idle) / 25% (tracking). Icon in tile color. Press: `transform: scale(0.94)` on `:active`.
 
-**Tap button:** large (min 80px × 80px), circular, press animation via `transform: scale(0.94)` on `:active`.
-
-**Tile grid:** CSS Grid with `grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))`. Tiles resize automatically as more are added.
-
-**Transitions:** all state changes use `transition: all 200ms ease`.
+**Transitions:** `transition: all 200ms ease` on all state changes.
 
 **No JS animation libraries.** CSS only.
 
@@ -287,6 +360,7 @@ Update this section as phases complete.
 - [x] Phase 2 — Components (full UI, RTL tests)
 - [x] Phase 3 — PWA & polish (manifest, service worker, a11y audit)
 - [x] Phase 4 — CI/CD (GitHub Actions, E2E tests, Cloudflare deploy)
+- [ ] Phase 5 — v1.1 redesign (tile fill, square layout, neon colors, name/code, break tile, palette softening, button fix)
 
 ---
 

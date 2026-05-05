@@ -1,9 +1,9 @@
 # Taplog — Product Requirements Document & Development Plan
 
-> **Version:** 1.0 — MVP  
+> **Version:** 1.1 — Design iteration  
 > **Author:** Pawel (owner) / Claude (scribe)  
 > **Date:** May 2026  
-> **Status:** Ready for development
+> **Status:** In development — v1.1 changes pending answers to open questions (marked ❓)
 
 ---
 
@@ -157,7 +157,45 @@ Time is computed at render time — only `accumulatedMs` is persisted (not live 
 
 ---
 
-### 8. Out of Scope — v1
+### 8. Design Changes — v1.1
+
+These changes supersede the corresponding v1.0 requirements above.
+
+#### 8.1 Tile Layout & Sizing
+
+| ID | Change |
+|---|---|
+| F-03 **revised** | Tiles fill **all available space** — both horizontally and vertically. The grid computes column count dynamically from the tile count so that the entire main area is occupied (no blank rows at the bottom). |
+| F-25 **revised** | Tiles are **square or nearly square** at all times. The grid algorithm picks column and row counts that produce the closest-to-square cell given the available area. Rectangles are only allowed when a single tile must span the full width (e.g. only 1 tile on a very wide screen). Minimum cell size: 140 × 140 px. |
+| F-04 **revised** | Tile visual hierarchy (top to bottom): **(1) activity name or short code** (large, dominant, centered), **(2) central start/pause button** (the primary tap target), **(3) elapsed timer HH:MM:SS** (bottom, smaller). The counter is secondary to identity and action. |
+| F-30 **new** | Each activity has an optional **short code** of up to **5 characters** (e.g. "WORK", "DEV", "BRK"). Entered as an optional field in the Add/Edit modal. The tile shows the full name when wide enough, and falls back to the code when narrower. If no code is set, no fallback is shown (name is always used). |
+
+#### 8.2 Colour System
+
+| ID | Change |
+|---|---|
+| F-31 **new** | Each activity tile has a **unique neon accent colour** drawn from a rotating palette: blue `#3b82f6`, purple `#a855f7`, pink `#ec4899`, amber `#f59e0b`, cyan `#06b6d4`, green `#22c55e`, rose `#f43f5e`, indigo `#6366f1`. Colour is **auto-assigned** when the activity is created (index mod 8) and persists. User colour-picking is a future feature. |
+| F-32 **new** | **Idle tile**: border `1px solid {color}` at 25% opacity (dim neon outline). |
+| F-33 **new** | **Tracking tile**: full-brightness border `2px solid {color}` + `box-shadow` glow + `@keyframes` pulse, all using the tile's own accent colour. Text indicator reads **"● Tracking"** (not "Running"). |
+| F-34 **new** | **Softened text palette**: `--text-primary: #c8c4d4` (warm light purple-grey, easier on the eye than cold white). Backgrounds get a very slight warm-violet tint: `--bg-base: #0e1016`, `--bg-tile: #181b26`. |
+| F-37 **new** | **Sidebar total timer colour**: the HH:MM:SS total in the sidebar is **orange** (`#fb923c`) when total < 8 hours, and **green** (`#4ade80`) when ≥ 8 hours. This gives a daily goal indication without any additional UI. |
+| F-38 **new** | Language: use **"Tracking"** everywhere in the UI instead of "Running". `aria-label` on the toggle button reads "Stop tracking {name}" / "Start tracking {name}". The text indicator on a tile reads "● Tracking". |
+
+#### 8.3 Pause Tile
+
+| ID | Change |
+|---|---|
+| F-35 **new** | A **Pause tile** is a special tile whose only function is to **stop the currently running timer**. It does not track time itself and has no HH:MM:SS counter. Visual states: (a) when a timer is active — shows ⏸ icon, dim; (b) when **nothing is being tracked** — glows amber (`#f59e0b` + pulse glow) to draw the user's eye and confirm idle state. The Pause tile is added via a dedicated "Add pause tile" option (or appears automatically as the second tile when the user has no pause tile yet — TBD). Data model: `isPause: true` on the `Activity` record; `accumulatedMs` is always 0 and ignored. Future: Pomodoro auto-pause after a focus interval. |
+
+#### 8.4 Button Style Fix
+
+| ID | Change |
+|---|---|
+| F-36 **new** | Undo, Reset All, Cancel, and Add buttons replace Tailwind `ring-*` with an explicit `border: 1px solid` declaration. The `ring-*` utility uses `outline` or `box-shadow` depending on browser and can be clipped on macOS Safari when combined with `border-radius`, causing part of the border to disappear. Switching to a true CSS `border` fixes this across all platforms. |
+
+---
+
+### 9. Out of Scope — v1
 
 - User authentication / accounts
 - Cross-device sync
@@ -170,13 +208,14 @@ Time is computed at render time — only `accumulatedMs` is persisted (not live 
 
 ---
 
-### 9. Future Roadmap (post-v1 ideas)
+### 10. Future Roadmap (post-v1 ideas)
 
 - Optional export to CSV/JSON
 - Daily history log (last 30 days, stored in `IndexedDB`)
 - PWA share-target for quick add
 - Multi-user mode with optional cloud sync
-- Activity colour customisation
+- Per-tile colour picker (v1.1 auto-assigns; v1.2+ lets user choose)
+- Pomodoro mode built on the Break tile concept (F-35)
 
 ---
 
