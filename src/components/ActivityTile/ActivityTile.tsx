@@ -106,7 +106,7 @@ export function ActivityTile({ activity }: Props) {
             aria-label="Activity options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            className="flex h-7 w-7 items-center justify-center rounded text-muted transition-colors hover:text-primary"
+            className="flex h-12 w-12 items-center justify-center rounded text-muted transition-colors hover:text-primary"
           >
             ⋯
           </button>
@@ -120,7 +120,7 @@ export function ActivityTile({ activity }: Props) {
                 <button
                   role="menuitem"
                   onClick={() => handleMenuAction(startEditing)}
-                  className="w-full px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-white/5"
+                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
                 >
                   Rename
                 </button>
@@ -129,7 +129,7 @@ export function ActivityTile({ activity }: Props) {
                 <button
                   role="menuitem"
                   onClick={() => handleMenuAction(() => resetActivity(activity.id))}
-                  className="w-full px-3 py-2 text-left text-sm text-primary transition-colors hover:bg-white/5"
+                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
                 >
                   Reset tile
                 </button>
@@ -138,7 +138,7 @@ export function ActivityTile({ activity }: Props) {
                 <button
                   role="menuitem"
                   onClick={() => handleMenuAction(() => deleteActivity(activity.id))}
-                  className="w-full px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-white/5"
+                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-danger transition-colors hover:bg-white/5"
                 >
                   Delete
                 </button>

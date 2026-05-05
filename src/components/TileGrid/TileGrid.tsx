@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { ActivityTile } from '../ActivityTile'
 import { AddActivityModal } from '../AddActivityModal'
@@ -6,6 +6,7 @@ import { AddActivityModal } from '../AddActivityModal'
 export function TileGrid() {
   const activities = useTaplogStore((s) => s.activities)
   const [modalOpen, setModalOpen] = useState(false)
+  const addBtnRef = useRef<HTMLButtonElement>(null)
 
   return (
     <>
@@ -18,6 +19,7 @@ export function TileGrid() {
         ))}
 
         <button
+          ref={addBtnRef}
           onClick={() => setModalOpen(true)}
           aria-label="Add activity"
           className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 text-muted transition-colors hover:border-accent/50 hover:text-accent"
@@ -27,7 +29,12 @@ export function TileGrid() {
         </button>
       </div>
 
-      {modalOpen && <AddActivityModal onClose={() => setModalOpen(false)} />}
+      {modalOpen && (
+        <AddActivityModal
+          onClose={() => setModalOpen(false)}
+          triggerRef={addBtnRef}
+        />
+      )}
     </>
   )
 }
