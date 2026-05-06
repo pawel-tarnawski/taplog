@@ -7,13 +7,28 @@ import { hexToRgba } from '../../utils/color'
 interface Props {
   activity: Activity
   tileWidth: number
+  tileHeight: number
   onEdit: (activity: Activity) => void
 }
 
-export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
+/** Compute all scaled sizes from the tile's smallest dimension. */
+function tileScale(tileWidth: number, tileHeight: number) {
+  const d = Math.min(tileWidth || 200, tileHeight || 200)
+  return {
+    btnSize:     Math.max(80,  Math.min(Math.round(d * 0.44), 220)),
+    iconSize:    Math.max(20,  Math.min(Math.round(d * 0.18),  88)),
+    nameSize:    Math.max(15,  Math.min(Math.round(d * 0.10),  52)),
+    timerSize:   Math.max(11,  Math.min(Math.round(d * 0.08),  40)),
+    dotSize:     Math.max(10,  Math.min(Math.round(d * 0.055), 18)),
+    menuBtnSize: Math.max(48,  Math.min(Math.round(d * 0.18),  72)),
+  }
+}
+
+export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props) {
   const toggleTimer = useTaplogStore((s) => s.toggleTimer)
   const resetActivity = useTaplogStore((s) => s.resetActivity)
   const deleteActivity = useTaplogStore((s) => s.deleteActivity)
+  const renameActivity = useTaplogStore((s) => s.renameActivity)
 
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(activity.name)
@@ -21,12 +36,15 @@ export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
 
   const menuRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
-  const renameActivity = useTaplogStore((s) => s.renameActivity)
 
   const displayMs =
     activity.accumulatedMs +
     (activity.isRunning && activity.startedAt !== null ? Date.now() - activity.startedAt : 0)
 
+  const { btnSize, iconSize, nameSize, timerSize, dotSize, menuBtnSize } =
+    tileScale(tileWidth, tileHeight)
+
+  // Show code when tile is narrow and code is set
   const showCode = !!(activity.code && tileWidth > 0 && tileWidth < 150)
   const displayLabel = showCode ? activity.code! : activity.name
 
@@ -95,7 +113,7 @@ export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
         '--tile-glow-bright': `0 0 32px ${glowBright}`,
       } as React.CSSProperties}
     >
-      {/* Top row: name + menu */}
+      {/* Top row: name + menu button */}
       <div className="flex w-full items-start justify-between gap-1">
         {editingName ? (
           <input
@@ -105,12 +123,13 @@ export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
             onBlur={commitName}
             onKeyDown={handleNameKeyDown}
             aria-label="Rename activity"
-            className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 text-sm font-semibold text-primary outline-none ring-1"
-            style={{ '--tw-ring-color': color } as React.CSSProperties}
+            className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 font-semibold text-primary outline-none ring-1"
+            style={{ fontSize: nameSize, '--tw-ring-color': color } as React.CSSProperties}
           />
         ) : (
           <h2
-            className="min-w-0 flex-1 cursor-default truncate text-sm font-semibold leading-tight text-primary"
+            className="min-w-0 flex-1 cursor-default truncate font-bold leading-tight text-primary"
+            style={{ fontSize: nameSize }}
             onDoubleClick={startEditing}
             title={activity.name}
           >
@@ -124,7 +143,8 @@ export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
             aria-label="Activity options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            className="flex h-12 w-12 items-center justify-center rounded text-muted transition-colors hover:text-primary"
+            className="flex items-center justify-center rounded text-muted transition-colors hover:text-primary"
+            style={{ width: menuBtnSize, height: menuBtnSize }}
           >
             ⋯
           </button>
@@ -171,24 +191,38 @@ export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
       <button
         onClick={() => toggleTimer(activity.id)}
         aria-pressed={activity.isRunning}
-        aria-label={activity.isRunning ? `Stop tracking ${activity.name}` : `Start tracking ${activity.name}`}
-        className="flex h-20 w-20 min-h-[80px] min-w-[80px] items-center justify-center rounded-full text-2xl transition-all duration-200 active:scale-95"
-        style={{ background: btnBg, color }}
+        aria-label={
+          activity.isRunning ? `Stop tracking ${activity.name}` : `Start tracking ${activity.name}`
+        }
+        className="flex shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-95"
+        style={{
+          width: btnSize,
+          height: btnSize,
+          minWidth: 80,
+          minHeight: 80,
+          fontSize: iconSize,
+          background: btnBg,
+          color,
+        }}
       >
         {activity.isRunning ? '⏸' : '▶'}
       </button>
 
       {/* Bottom: tracking indicator + timer */}
-      <div className="flex w-full flex-col items-center gap-0.5">
+      <div className="flex w-full flex-col items-center">
         <span
-          className="text-xs font-medium transition-colors"
-          style={{ color: activity.isRunning ? color : 'transparent' }}
+          className="font-medium transition-colors"
+          style={{
+            fontSize: dotSize,
+            color: activity.isRunning ? color : 'transparent',
+          }}
           aria-hidden="true"
         >
           ● Tracking
         </span>
         <div
-          className="font-mono text-lg tracking-widest text-primary"
+          className="font-mono font-medium tracking-widest text-primary"
+          style={{ fontSize: timerSize }}
           aria-label={`Timer: ${formatMs(displayMs)}`}
         >
           {formatMs(displayMs)}
