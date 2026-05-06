@@ -3,6 +3,7 @@ import type { Activity } from '../../types'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
 import { hexToRgba } from '../../utils/color'
+import { PlayIcon, PauseIcon, DotsIcon } from '../icons'
 
 interface Props {
   activity: Activity
@@ -143,10 +144,10 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
             aria-label="Activity options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            className="flex items-center justify-center rounded text-muted transition-colors hover:text-primary"
+            className="flex items-center justify-center rounded transition-colors"
             style={{ width: menuBtnSize, height: menuBtnSize }}
           >
-            ⋯
+            <DotsIcon size={Math.round(menuBtnSize * 0.5)} color="currentColor" />
           </button>
 
           {menuOpen && (
@@ -200,12 +201,12 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
           height: btnSize,
           minWidth: 80,
           minHeight: 80,
-          fontSize: iconSize,
           background: btnBg,
-          color,
         }}
       >
-        {activity.isRunning ? '⏸' : '▶'}
+        {activity.isRunning
+          ? <PauseIcon size={iconSize} color={color} />
+          : <PlayIcon size={iconSize} color={color} />}
       </button>
 
       {/* Bottom: tracking indicator + timer */}

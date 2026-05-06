@@ -3,6 +3,7 @@ import { useTaplogStore } from '../../store/taplogStore'
 import { ActivityTile } from '../ActivityTile'
 import { PauseTile } from '../PauseTile'
 import { AddActivityModal } from '../AddActivityModal'
+import { PlusIcon } from '../icons'
 import type { Activity } from '../../types'
 
 const GAP = 12 // gap-3 = 12px
@@ -96,7 +97,7 @@ export function TileGrid() {
           className="flex flex-col items-center justify-center gap-2 rounded-xl text-muted transition-colors hover:text-primary"
           style={{ border: '1px dashed rgba(255,255,255,0.18)' }}
         >
-          <span style={{ fontSize: addPlusSize, lineHeight: 1 }}>+</span>
+          <PlusIcon size={addPlusSize} />
           <span style={{ fontSize: addLabelSize }} className="font-medium">
             Add activity
           </span>
