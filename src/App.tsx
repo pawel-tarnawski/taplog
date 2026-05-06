@@ -6,7 +6,7 @@ export default function App() {
   useTick()
 
   return (
-    <div className="flex h-screen bg-base">
+    <div className="flex h-screen-safe bg-base">
       <main className="flex-1 p-3 pb-20 min-[440px]:pb-3 min-[440px]:pr-[calc(min(20vw,256px)+12px)]">
         <TileGrid />
       </main>

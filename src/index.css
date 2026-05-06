@@ -27,6 +27,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* 100svh = height with browser chrome visible (address bar shown).
+   Falls back to 100vh on browsers that don't support svh (old Android). */
+@layer utilities {
+  .h-screen-safe {
+    height: 100vh;
+    height: 100svh;
+  }
+}
+
 @keyframes tile-pulse {
   0%, 100% { box-shadow: var(--tile-glow-dim); }
   50%       { box-shadow: var(--tile-glow-bright); }
