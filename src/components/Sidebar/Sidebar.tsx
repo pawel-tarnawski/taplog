@@ -1,3 +1,4 @@
+import { useRef, useState, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
 
@@ -24,10 +25,24 @@ export function Sidebar() {
 
   const total = totalMs()
 
+  const asideRef = useRef<HTMLElement>(null)
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+
+  useLayoutEffect(() => {
+    const el = asideRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width > 0) setSidebarWidth(rect.width)
+    const observer = new ResizeObserver(([entry]) => setSidebarWidth(entry.contentRect.width))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       {/* Desktop: fixed right panel */}
       <aside
+        ref={asideRef}
         className="fixed right-0 top-0 hidden h-screen w-[20vw] max-w-64 flex-col bg-sidebar p-5 min-[480px]:flex"
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
@@ -37,6 +52,7 @@ export function Sidebar() {
           total={total}
           onResetAll={resetAll}
           onUndo={undo}
+          compact={sidebarWidth < 200}
         />
       </aside>
 
@@ -82,9 +98,10 @@ interface ContentProps {
   total: number
   onResetAll: () => void
   onUndo: () => void
+  compact: boolean
 }
 
-function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }: ContentProps) {
+function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, compact }: ContentProps) {
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {/* Date */}
@@ -119,7 +136,7 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }:
                       className="inline-block h-2 w-2 shrink-0 rounded-full"
                       style={{ background: a.color }}
                     />
-                    {a.name}
+                    {compact && a.code ? a.code : a.name}
                   </span>
                   <span className="shrink-0 font-mono text-xs text-muted">{formatMs(ms)}</span>
                 </li>
