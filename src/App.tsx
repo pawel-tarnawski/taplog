@@ -6,8 +6,8 @@ export default function App() {
   useTick()
 
   return (
-    <div className="min-h-screen bg-base">
-      <main className="p-4 pb-20 sm:pr-64 sm:pb-4">
+    <div className="flex h-screen bg-base">
+      <main className="flex-1 overflow-hidden p-3 pb-20 sm:pb-3 sm:pr-64">
         <TileGrid />
       </main>
       <Sidebar />

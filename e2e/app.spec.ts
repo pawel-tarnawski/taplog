@@ -22,13 +22,13 @@ test('app loads and shows Add activity button', async ({ page }) => {
 test('start timer → pause → reload → time persists', async ({ page }) => {
   await addActivity(page, 'Work')
 
-  await page.getByRole('button', { name: 'Start Work' }).click()
-  await expect(page.getByRole('button', { name: 'Pause Work' })).toBeVisible()
+  await page.getByRole('button', { name: 'Start tracking Work' }).click()
+  await expect(page.getByRole('button', { name: 'Stop tracking Work' })).toBeVisible()
 
   // Let at least 1 second of real time elapse
   await page.waitForTimeout(2000)
 
-  await page.getByRole('button', { name: 'Pause Work' }).click()
+  await page.getByRole('button', { name: 'Stop tracking Work' }).click()
 
   const timerLocator = page.locator('[aria-label^="Timer:"]').first()
   const timeBefore = await timerLocator.textContent()
@@ -41,11 +41,11 @@ test('start timer → pause → reload → time persists', async ({ page }) => {
 
 test('running timer survives reload', async ({ page }) => {
   await addActivity(page, 'Work')
-  await page.getByRole('button', { name: 'Start Work' }).click()
+  await page.getByRole('button', { name: 'Start tracking Work' }).click()
   await page.waitForTimeout(1500)
   await page.reload()
 
-  await expect(page.getByRole('button', { name: 'Pause Work' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Stop tracking Work' })).toBeVisible()
   await expect(page.locator('[aria-label^="Timer:"]').first()).not.toContainText('00:00:00')
 })
 
@@ -67,7 +67,7 @@ test('add 5 tiles → grid reflows without overflow', async ({ page }) => {
 
 test('toggle button meets ≥ 48×48 px tap target', async ({ page }) => {
   await addActivity(page, 'Work')
-  const box = await page.getByRole('button', { name: 'Start Work' }).boundingBox()
+  const box = await page.getByRole('button', { name: 'Start tracking Work' }).boundingBox()
   expect(box).not.toBeNull()
   expect(box!.width).toBeGreaterThanOrEqual(48)
   expect(box!.height).toBeGreaterThanOrEqual(48)

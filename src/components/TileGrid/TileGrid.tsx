@@ -1,40 +1,114 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { ActivityTile } from '../ActivityTile'
+import { PauseTile } from '../PauseTile'
 import { AddActivityModal } from '../AddActivityModal'
+import type { Activity } from '../../types'
+
+function computeGridLayout(
+  count: number,
+  containerWidth: number,
+  containerHeight: number,
+): { cols: number; rows: number } {
+  if (count <= 0 || containerWidth <= 0 || containerHeight <= 0) return { cols: 1, rows: 1 }
+
+  const MIN_CELL = 140
+  let bestCols = Math.max(1, Math.ceil(Math.sqrt(count)))
+  let bestScore = Infinity
+
+  for (let cols = 1; cols <= count; cols++) {
+    const rows = Math.ceil(count / cols)
+    const cellW = containerWidth / cols
+    const cellH = containerHeight / rows
+    if (cellW < MIN_CELL || cellH < MIN_CELL) continue
+    const score = Math.max(cellW / cellH, cellH / cellW)
+    if (score < bestScore) {
+      bestScore = score
+      bestCols = cols
+    }
+  }
+
+  return { cols: bestCols, rows: Math.ceil(count / bestCols) }
+}
 
 export function TileGrid() {
   const activities = useTaplogStore((s) => s.activities)
-  const [modalOpen, setModalOpen] = useState(false)
+  const addActivity = useTaplogStore((s) => s.addActivity)
+  const renameActivity = useTaplogStore((s) => s.renameActivity)
+
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [editActivity, setEditActivity] = useState<Activity | null>(null)
   const addBtnRef = useRef<HTMLButtonElement>(null)
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      setContainerSize({ width, height })
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  // total items = activity tiles + pause tile + add button
+  const totalItems = activities.length + 2
+  const { cols, rows } = computeGridLayout(totalItems, containerSize.width, containerSize.height)
+  const tileWidth = cols > 0 ? containerSize.width / cols : 0
+
   return (
-    <>
+    <div ref={containerRef} className="h-full w-full">
       <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}
+        className="grid h-full gap-3"
+        style={{
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+        }}
       >
         {activities.map((activity) => (
-          <ActivityTile key={activity.id} activity={activity} />
+          <ActivityTile
+            key={activity.id}
+            activity={activity}
+            tileWidth={tileWidth}
+            onEdit={setEditActivity}
+          />
         ))}
+
+        <PauseTile />
 
         <button
           ref={addBtnRef}
-          onClick={() => setModalOpen(true)}
+          onClick={() => setAddModalOpen(true)}
           aria-label="Add activity"
-          className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 text-muted transition-colors hover:border-accent/50 hover:text-accent"
+          className="flex flex-col items-center justify-center gap-2 rounded-xl text-muted transition-colors hover:text-primary"
+          style={{ border: '1px dashed rgba(255,255,255,0.18)' }}
         >
           <span className="text-3xl leading-none">+</span>
           <span className="text-sm font-medium">Add activity</span>
         </button>
       </div>
 
-      {modalOpen && (
+      {addModalOpen && (
         <AddActivityModal
-          onClose={() => setModalOpen(false)}
+          onClose={() => setAddModalOpen(false)}
+          onConfirm={addActivity}
           triggerRef={addBtnRef}
         />
       )}
-    </>
+
+      {editActivity && (
+        <AddActivityModal
+          onClose={() => setEditActivity(null)}
+          onConfirm={(name, code) => renameActivity(editActivity.id, name, code)}
+          initialName={editActivity.name}
+          initialCode={editActivity.code ?? ''}
+          title="Edit activity"
+          confirmLabel="Save"
+        />
+      )}
+    </div>
   )
 }

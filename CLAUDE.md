@@ -360,7 +360,7 @@ Update this section as phases complete.
 - [x] Phase 2 — Components (full UI, RTL tests)
 - [x] Phase 3 — PWA & polish (manifest, service worker, a11y audit)
 - [x] Phase 4 — CI/CD (GitHub Actions, E2E tests, Cloudflare deploy)
-- [ ] Phase 5 — v1.1 redesign (tile fill, square layout, neon colors, name/code, break tile, palette softening, button fix)
+- [x] Phase 5 — v1.1 redesign (tile fill, square layout, neon colors, name/code, pause tile, palette softening, button fix)
 
 ---
 

@@ -2,14 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import type { Activity } from '../../types'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
+import { hexToRgba } from '../../utils/color'
 
 interface Props {
   activity: Activity
+  tileWidth: number
+  onEdit: (activity: Activity) => void
 }
 
-export function ActivityTile({ activity }: Props) {
+export function ActivityTile({ activity, tileWidth, onEdit }: Props) {
   const toggleTimer = useTaplogStore((s) => s.toggleTimer)
-  const renameActivity = useTaplogStore((s) => s.renameActivity)
   const resetActivity = useTaplogStore((s) => s.resetActivity)
   const deleteActivity = useTaplogStore((s) => s.deleteActivity)
 
@@ -19,10 +21,21 @@ export function ActivityTile({ activity }: Props) {
 
   const menuRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const renameActivity = useTaplogStore((s) => s.renameActivity)
 
   const displayMs =
     activity.accumulatedMs +
     (activity.isRunning && activity.startedAt !== null ? Date.now() - activity.startedAt : 0)
+
+  const showCode = !!(activity.code && tileWidth > 0 && tileWidth < 150)
+  const displayLabel = showCode ? activity.code! : activity.name
+
+  const color = activity.color
+  const glowDim = hexToRgba(color, 0.3)
+  const glowBright = hexToRgba(color, 0.55)
+  const borderColor = activity.isRunning ? color : hexToRgba(color, 0.28)
+  const borderWidth = activity.isRunning ? '2px' : '1px'
+  const btnBg = activity.isRunning ? hexToRgba(color, 0.22) : hexToRgba(color, 0.12)
 
   useEffect(() => {
     if (!editingName) setNameValue(activity.name)
@@ -51,7 +64,7 @@ export function ActivityTile({ activity }: Props) {
 
   function commitName() {
     const trimmed = nameValue.trim()
-    if (trimmed && trimmed !== activity.name) renameActivity(activity.id, trimmed)
+    if (trimmed && trimmed !== activity.name) renameActivity(activity.id, trimmed, activity.code)
     setNameValue(trimmed || activity.name)
     setEditingName(false)
   }
@@ -72,14 +85,18 @@ export function ActivityTile({ activity }: Props) {
   return (
     <article
       className={[
-        'relative flex flex-col items-center gap-3 rounded-xl border p-4 transition-all duration-200',
-        activity.isRunning
-          ? 'border-accent bg-tile animate-tile-pulse'
-          : 'border-transparent bg-tile hover:bg-tile-hover',
+        'relative flex flex-col items-center justify-between rounded-xl p-3 transition-all duration-200',
+        activity.isRunning ? 'animate-tile-pulse' : '',
       ].join(' ')}
+      style={{
+        border: `${borderWidth} solid ${borderColor}`,
+        backgroundColor: 'var(--bg-tile)',
+        '--tile-glow-dim': `0 0 18px ${glowDim}`,
+        '--tile-glow-bright': `0 0 32px ${glowBright}`,
+      } as React.CSSProperties}
     >
-      {/* Name row + options menu */}
-      <div className="flex w-full items-center justify-between gap-2">
+      {/* Top row: name + menu */}
+      <div className="flex w-full items-start justify-between gap-1">
         {editingName ? (
           <input
             ref={nameInputRef}
@@ -88,15 +105,16 @@ export function ActivityTile({ activity }: Props) {
             onBlur={commitName}
             onKeyDown={handleNameKeyDown}
             aria-label="Rename activity"
-            className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 text-sm font-medium text-primary outline-none ring-1 ring-accent"
+            className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 text-sm font-semibold text-primary outline-none ring-1"
+            style={{ '--tw-ring-color': color } as React.CSSProperties}
           />
         ) : (
           <h2
-            className="min-w-0 flex-1 cursor-default truncate text-sm font-medium text-primary"
+            className="min-w-0 flex-1 cursor-default truncate text-sm font-semibold leading-tight text-primary"
             onDoubleClick={startEditing}
-            title={`${activity.name} — double-click to rename`}
+            title={activity.name}
           >
-            {activity.name}
+            {displayLabel}
           </h2>
         )}
 
@@ -114,12 +132,13 @@ export function ActivityTile({ activity }: Props) {
           {menuOpen && (
             <ul
               role="menu"
-              className="absolute right-0 top-full z-10 mt-1 min-w-[130px] overflow-hidden rounded-lg border border-white/10 bg-sidebar shadow-lg"
+              className="absolute right-0 top-full z-10 mt-1 min-w-[130px] overflow-hidden rounded-lg bg-sidebar shadow-lg"
+              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
             >
               <li>
                 <button
                   role="menuitem"
-                  onClick={() => handleMenuAction(startEditing)}
+                  onClick={() => handleMenuAction(() => onEdit(activity))}
                   className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
                 >
                   Rename
@@ -148,39 +167,33 @@ export function ActivityTile({ activity }: Props) {
         </div>
       </div>
 
-      {/* Timer */}
-      <div
-        className="font-mono text-2xl tracking-widest text-primary"
-        aria-label={`Timer: ${formatMs(displayMs)}`}
-      >
-        {formatMs(displayMs)}
-      </div>
-
-      {/* Running text indicator — always in DOM for stable height */}
-      <span
-        className={`text-xs font-medium transition-colors ${
-          activity.isRunning ? 'text-accent' : 'text-transparent select-none'
-        }`}
-        aria-hidden="true"
-      >
-        ● Running
-      </span>
-
-      {/* Toggle button — primary tap target */}
+      {/* Central toggle button */}
       <button
         onClick={() => toggleTimer(activity.id)}
         aria-pressed={activity.isRunning}
-        aria-label={activity.isRunning ? `Pause ${activity.name}` : `Start ${activity.name}`}
-        className={[
-          'flex h-20 w-20 min-h-[80px] min-w-[80px] items-center justify-center rounded-full text-2xl',
-          'transition-all duration-200 active:scale-95',
-          activity.isRunning
-            ? 'bg-accent/20 text-accent hover:bg-accent/30'
-            : 'bg-white/10 text-primary hover:bg-white/15',
-        ].join(' ')}
+        aria-label={activity.isRunning ? `Stop tracking ${activity.name}` : `Start tracking ${activity.name}`}
+        className="flex h-20 w-20 min-h-[80px] min-w-[80px] items-center justify-center rounded-full text-2xl transition-all duration-200 active:scale-95"
+        style={{ background: btnBg, color }}
       >
         {activity.isRunning ? '⏸' : '▶'}
       </button>
+
+      {/* Bottom: tracking indicator + timer */}
+      <div className="flex w-full flex-col items-center gap-0.5">
+        <span
+          className="text-xs font-medium transition-colors"
+          style={{ color: activity.isRunning ? color : 'transparent' }}
+          aria-hidden="true"
+        >
+          ● Tracking
+        </span>
+        <div
+          className="font-mono text-lg tracking-widest text-primary"
+          aria-label={`Timer: ${formatMs(displayMs)}`}
+        >
+          {formatMs(displayMs)}
+        </div>
+      </div>
     </article>
   )
 }

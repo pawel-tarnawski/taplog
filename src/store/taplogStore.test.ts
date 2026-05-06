@@ -36,6 +36,19 @@ describe('addActivity', () => {
     expect(activities[0].isRunning).toBe(false)
     expect(activities[0].startedAt).toBeNull()
     expect(typeof activities[0].id).toBe('string')
+    expect(typeof activities[0].color).toBe('string')
+  })
+
+  it('stores optional code uppercased and truncated to 5 chars', () => {
+    useTaplogStore.getState().addActivity('Work', 'working')
+    expect(useTaplogStore.getState().activities[0].code).toBe('WORKI')
+  })
+
+  it('assigns rotating palette colors to successive activities', () => {
+    useTaplogStore.getState().addActivity('A')
+    useTaplogStore.getState().addActivity('B')
+    const { activities } = useTaplogStore.getState()
+    expect(activities[0].color).not.toBe(activities[1].color)
   })
 
   it('assigns unique ids to multiple activities', () => {
@@ -334,7 +347,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-01', activities }))
     useTaplogStore.setState({ activities })
@@ -347,7 +360,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-02', activities }))
     useTaplogStore.setState({ activities })
@@ -359,7 +372,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     const snapshot = { timestamp: 1, activities: [{ id: '1', accumulatedMs: 5_000 }] }
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-01', activities }))
@@ -372,7 +385,7 @@ describe('_checkDayChange', () => {
 
   it('is a no-op when localStorage has no stored state', () => {
     const activities = [
-      { id: '1', name: 'Work', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     useTaplogStore.setState({ activities })
     useTaplogStore.getState()._checkDayChange()
@@ -392,8 +405,8 @@ describe('totalMs', () => {
   it('sums accumulated ms across all activities', () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'A', accumulatedMs: 3_000, isRunning: false, startedAt: null },
-        { id: '2', name: 'B', accumulatedMs: 7_000, isRunning: false, startedAt: null },
+        { id: '1', name: 'A', color: '#3b82f6', accumulatedMs: 3_000, isRunning: false, startedAt: null },
+        { id: '2', name: 'B', color: '#a855f7', accumulatedMs: 7_000, isRunning: false, startedAt: null },
       ],
     })
     expect(useTaplogStore.getState().totalMs()).toBe(10_000)
@@ -404,7 +417,7 @@ describe('totalMs', () => {
     vi.setSystemTime(1_000_000)
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'A', accumulatedMs: 2_000, isRunning: true, startedAt: 1_000_000 - 3_000 },
+        { id: '1', name: 'A', color: '#3b82f6', accumulatedMs: 2_000, isRunning: true, startedAt: 1_000_000 - 3_000 },
       ],
     })
     vi.setSystemTime(1_001_000)
@@ -439,7 +452,7 @@ describe('persistence (loadState)', () => {
   it('returns the parsed state for valid data', () => {
     const state = {
       date: '2024-01-01',
-      activities: [{ id: 'x', name: 'A', accumulatedMs: 0, isRunning: false, startedAt: null }],
+      activities: [{ id: 'x', name: 'A', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null }],
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     expect(loadState()).toEqual(state)

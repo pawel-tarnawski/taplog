@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { nanoid } from 'nanoid'
 import type { Activity, UndoSnapshot } from '../types'
+import { nextTileColor } from '../utils/tileColors'
 import {
   loadState,
   saveState,
@@ -19,8 +20,8 @@ interface TaplogStore {
 
   totalMs: () => number
 
-  addActivity: (name: string) => void
-  renameActivity: (id: string, name: string) => void
+  addActivity: (name: string, code?: string) => void
+  renameActivity: (id: string, name: string, code?: string) => void
   deleteActivity: (id: string) => void
   toggleTimer: (id: string) => void
   resetActivity: (id: string) => void
@@ -39,19 +40,25 @@ function buildInitialState(): Pick<TaplogStore, 'activities' | 'undoSnapshot'> {
     return { activities: [], undoSnapshot: null }
   }
 
+  // Migrate activities that predate the color field
+  const activities = stored.activities.map((a, i) => ({
+    ...a,
+    color: (a as { color?: string }).color ?? nextTileColor(i),
+  }))
+
   if (stored.date !== today) {
-    const activities = stored.activities.map((a) => ({
+    const reset = activities.map((a) => ({
       ...a,
       accumulatedMs: 0,
       isRunning: false,
       startedAt: null,
     }))
-    saveState({ date: today, activities })
+    saveState({ date: today, activities: reset })
     clearUndoSnapshot()
-    return { activities, undoSnapshot: null }
+    return { activities: reset, undoSnapshot: null }
   }
 
-  return { activities: stored.activities, undoSnapshot: loadUndoSnapshot() }
+  return { activities, undoSnapshot: loadUndoSnapshot() }
 }
 
 const initial = buildInitialState()
@@ -67,10 +74,13 @@ export const useTaplogStore = create<TaplogStore>()((set, get) => ({
     }, 0)
   },
 
-  addActivity: (name: string) => {
+  addActivity: (name: string, code?: string) => {
+    const trimmedCode = code?.trim().toUpperCase().slice(0, 5) || undefined
     const activity: Activity = {
       id: nanoid(),
       name,
+      code: trimmedCode,
+      color: nextTileColor(get().activities.length),
       accumulatedMs: 0,
       isRunning: false,
       startedAt: null,
@@ -79,9 +89,12 @@ export const useTaplogStore = create<TaplogStore>()((set, get) => ({
     get()._persist()
   },
 
-  renameActivity: (id: string, name: string) => {
+  renameActivity: (id: string, name: string, code?: string) => {
+    const trimmedCode = code?.trim().toUpperCase().slice(0, 5) || undefined
     set((state) => ({
-      activities: state.activities.map((a) => (a.id === id ? { ...a, name } : a)),
+      activities: state.activities.map((a) =>
+        a.id === id ? { ...a, name, code: trimmedCode } : a,
+      ),
     }))
     get()._persist()
   },
