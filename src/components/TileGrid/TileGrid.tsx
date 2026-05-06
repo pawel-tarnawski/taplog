@@ -5,6 +5,8 @@ import { PauseTile } from '../PauseTile'
 import { AddActivityModal } from '../AddActivityModal'
 import type { Activity } from '../../types'
 
+const GAP = 12 // gap-3 = 12px
+
 function computeGridLayout(
   count: number,
   containerWidth: number,
@@ -18,8 +20,8 @@ function computeGridLayout(
 
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols)
-    const cellW = containerWidth / cols
-    const cellH = containerHeight / rows
+    const cellW = (containerWidth - (cols - 1) * GAP) / cols
+    const cellH = (containerHeight - (rows - 1) * GAP) / rows
     if (cellW < MIN_CELL || cellH < MIN_CELL) continue
     const score = Math.max(cellW / cellH, cellH / cellW)
     if (score < bestScore) {
@@ -54,10 +56,17 @@ export function TileGrid() {
     return () => observer.disconnect()
   }, [])
 
-  // total items = activity tiles + pause tile + add button
   const totalItems = activities.length + 2
   const { cols, rows } = computeGridLayout(totalItems, containerSize.width, containerSize.height)
-  const tileWidth = cols > 0 ? containerSize.width / cols : 0
+
+  // Actual cell dimensions (accounting for gap)
+  const tileWidth = cols > 0 ? (containerSize.width - (cols - 1) * GAP) / cols : 0
+  const tileHeight = rows > 0 ? (containerSize.height - (rows - 1) * GAP) / rows : 0
+
+  // Scale "+" add button text with tile size
+  const minDim = Math.min(tileWidth || 200, tileHeight || 200)
+  const addPlusSize = Math.max(24, Math.round(minDim * 0.18))
+  const addLabelSize = Math.max(11, Math.round(minDim * 0.07))
 
   return (
     <div ref={containerRef} className="h-full w-full">
@@ -73,11 +82,12 @@ export function TileGrid() {
             key={activity.id}
             activity={activity}
             tileWidth={tileWidth}
+            tileHeight={tileHeight}
             onEdit={setEditActivity}
           />
         ))}
 
-        <PauseTile />
+        <PauseTile tileWidth={tileWidth} tileHeight={tileHeight} />
 
         <button
           ref={addBtnRef}
@@ -86,8 +96,10 @@ export function TileGrid() {
           className="flex flex-col items-center justify-center gap-2 rounded-xl text-muted transition-colors hover:text-primary"
           style={{ border: '1px dashed rgba(255,255,255,0.18)' }}
         >
-          <span className="text-3xl leading-none">+</span>
-          <span className="text-sm font-medium">Add activity</span>
+          <span style={{ fontSize: addPlusSize, lineHeight: 1 }}>+</span>
+          <span style={{ fontSize: addLabelSize }} className="font-medium">
+            Add activity
+          </span>
         </button>
       </div>
 
