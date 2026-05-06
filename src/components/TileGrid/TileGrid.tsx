@@ -15,7 +15,6 @@ function computeGridLayout(
 ): { cols: number; rows: number } {
   if (count <= 0) return { cols: 1, rows: 1 }
 
-  // Before container is measured, use sqrt heuristic so there are no implicit rows
   const fallbackCols = Math.max(1, Math.ceil(Math.sqrt(count)))
   if (containerWidth <= 0 || containerHeight <= 0) {
     return { cols: fallbackCols, rows: Math.ceil(count / fallbackCols) }
@@ -29,7 +28,7 @@ function computeGridLayout(
     const cellW = (containerWidth - (cols - 1) * GAP) / cols
     const cellH = (containerHeight - (rows - 1) * GAP) / rows
     if (cellW <= 0 || cellH <= 0) continue
-    const score = Math.max(cellW / cellH, cellH / cellW) // 1 = perfect square
+    const score = Math.max(cellW / cellH, cellH / cellW)
     if (score < bestScore) {
       bestScore = score
       bestCols = cols
@@ -39,20 +38,19 @@ function computeGridLayout(
   return { cols: bestCols, rows: Math.ceil(count / bestCols) }
 }
 
-export function TileGrid() {
+interface Props {
+  onAddActivity: () => void
+}
+
+export function TileGrid({ onAddActivity }: Props) {
   const activities = useTaplogStore((s) => s.activities)
-  const addActivity = useTaplogStore((s) => s.addActivity)
   const renameActivity = useTaplogStore((s) => s.renameActivity)
 
-  const [addModalOpen, setAddModalOpen] = useState(false)
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
-  const addBtnRef = useRef<HTMLButtonElement>(null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
 
-  // useLayoutEffect fires before the browser paints — we get the real size on the
-  // very first render so there is no flash of wrong cols/rows.
   useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
@@ -70,15 +68,29 @@ export function TileGrid() {
     return () => observer.disconnect()
   }, [])
 
-  const totalItems = activities.length + 2 // +PauseTile +AddButton
+  // ── Empty state ──────────────────────────────────────────────────────────
+  if (activities.length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <button
+          onClick={onAddActivity}
+          aria-label="Add activity"
+          className="flex flex-col items-center gap-4 rounded-2xl px-12 py-10 text-muted transition-colors hover:text-primary"
+          style={{ border: '1px dashed rgba(255,255,255,0.15)' }}
+        >
+          <PlusIcon size={56} />
+          <span className="text-base font-medium">Add your first activity</span>
+        </button>
+      </div>
+    )
+  }
+
+  // ── Grid (activities + Pause tile) ───────────────────────────────────────
+  const totalItems = activities.length + 1 // +PauseTile
   const { cols, rows } = computeGridLayout(totalItems, containerSize.width, containerSize.height)
 
   const tileWidth  = cols > 0 ? (containerSize.width  - (cols - 1) * GAP) / cols : 0
   const tileHeight = rows > 0 ? (containerSize.height - (rows - 1) * GAP) / rows : 0
-
-  const minDim = Math.min(tileWidth || 160, tileHeight || 160)
-  const addPlusSize  = Math.max(20, Math.round(minDim * 0.18))
-  const addLabelSize = Math.max(10, Math.round(minDim * 0.07))
 
   return (
     <div ref={containerRef} className="h-full w-full">
@@ -100,28 +112,7 @@ export function TileGrid() {
         ))}
 
         <PauseTile tileWidth={tileWidth} tileHeight={tileHeight} />
-
-        <button
-          ref={addBtnRef}
-          onClick={() => setAddModalOpen(true)}
-          aria-label="Add activity"
-          className="flex flex-col items-center justify-center gap-2 rounded-xl text-muted transition-colors hover:text-primary"
-          style={{ border: '1px dashed rgba(255,255,255,0.18)' }}
-        >
-          <PlusIcon size={addPlusSize} />
-          <span style={{ fontSize: addLabelSize }} className="font-medium">
-            Add activity
-          </span>
-        </button>
       </div>
-
-      {addModalOpen && (
-        <AddActivityModal
-          onClose={() => setAddModalOpen(false)}
-          onConfirm={addActivity}
-          triggerRef={addBtnRef}
-        />
-      )}
 
       {editActivity && (
         <AddActivityModal
