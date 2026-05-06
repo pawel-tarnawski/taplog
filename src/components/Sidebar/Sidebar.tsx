@@ -19,7 +19,7 @@ function todayLabel(): string {
 
 interface SidebarProps {
   onAddActivity: () => void
-  addBtnRef: React.RefObject<HTMLButtonElement>
+  addBtnRef: React.RefObject<HTMLButtonElement | null>
 }
 
 export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
@@ -124,7 +124,7 @@ interface ContentProps {
   onResetAll: () => void
   onUndo: () => void
   onAddActivity: () => void
-  addBtnRef: React.RefObject<HTMLButtonElement>
+  addBtnRef: React.RefObject<HTMLButtonElement | null>
   sidebarWidth: number
   hasActivities: boolean
 }
