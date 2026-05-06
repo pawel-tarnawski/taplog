@@ -52,7 +52,7 @@ export function Sidebar() {
           total={total}
           onResetAll={resetAll}
           onUndo={undo}
-          compact={sidebarWidth < 230}
+          sidebarWidth={sidebarWidth}
         />
       </aside>
 
@@ -92,16 +92,21 @@ export function Sidebar() {
   )
 }
 
+// Overhead = padding (40) + dot+gap (14) + item gap (8) + time counter (56)
+const LABEL_OVERHEAD_PX = 118
+const CHAR_WIDTH_PX = 7.5 // Inter text-sm average
+
 interface ContentProps {
   activities: ReturnType<typeof useTaplogStore.getState>['activities']
   undoSnapshot: ReturnType<typeof useTaplogStore.getState>['undoSnapshot']
   total: number
   onResetAll: () => void
   onUndo: () => void
-  compact: boolean
+  sidebarWidth: number
 }
 
-function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, compact }: ContentProps) {
+function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, sidebarWidth }: ContentProps) {
+  const labelAvailablePx = Math.max(0, sidebarWidth - LABEL_OVERHEAD_PX)
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto">
       {/* Date */}
@@ -137,7 +142,7 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, c
                       style={{ background: a.color }}
                     />
                     <span className="min-w-0 truncate" title={a.name}>
-                      {compact && a.code ? a.code : a.name}
+                      {a.code && a.name.length * CHAR_WIDTH_PX > labelAvailablePx ? a.code : a.name}
                     </span>
                   </span>
                   <span className="shrink-0 font-mono text-xs text-muted">{formatMs(ms)}</span>
