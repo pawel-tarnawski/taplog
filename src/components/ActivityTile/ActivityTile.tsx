@@ -50,12 +50,13 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
     activity.accumulatedMs +
     (activity.isRunning && activity.startedAt !== null ? Date.now() - activity.startedAt : 0)
 
-  // Show short code when tile is narrow and a code is set
-  const showCode    = !!(activity.code && tileWidth > 0 && tileWidth < 150)
-  const displayLabel = showCode ? activity.code! : activity.name
+  const d = Math.max(40, Math.min((tileWidth || 160) - TILE_PAD, (tileHeight || 160) - TILE_PAD))
+  // Secondary name visible when tile has enough room; hidden on small/cramped tiles
+  const showSecondaryName = !!(activity.code && d >= 90)
+  const secondaryNameSize = Math.max(9, Math.min(Math.round(d * 0.075), 13))
 
   const { btnSize, iconSize, nameSize, timerSize, dotSize, menuBtnSize } =
-    tileScale(tileWidth, tileHeight, displayLabel.length)
+    tileScale(tileWidth, tileHeight, activity.code ? activity.code.length : activity.name.length)
 
   const color    = activity.color
   const glowDim    = hexToRgba(color, 0.45)
@@ -133,6 +134,31 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
             className="min-w-0 flex-1 rounded bg-transparent px-1 py-0.5 font-semibold text-primary outline-none ring-1"
             style={{ fontSize: nameSize, '--tw-ring-color': color } as React.CSSProperties}
           />
+        ) : activity.code ? (
+          <div className="flex min-w-0 flex-col" style={{ gap: Math.max(2, Math.round(nameSize * 0.2)) }}>
+            <span
+              className="self-start rounded-md font-mono font-bold leading-none"
+              style={{
+                fontSize: nameSize,
+                color,
+                background: hexToRgba(color, 0.2),
+                padding: `${Math.max(2, Math.round(nameSize * 0.2))}px ${Math.max(4, Math.round(nameSize * 0.38))}px`,
+              }}
+              onDoubleClick={startEditing}
+              title={activity.name}
+            >
+              {activity.code}
+            </span>
+            {showSecondaryName && (
+              <span
+                className="min-w-0 truncate text-muted"
+                style={{ fontSize: secondaryNameSize }}
+                title={activity.name}
+              >
+                {activity.name}
+              </span>
+            )}
+          </div>
         ) : (
           <h2
             className="min-w-0 flex-1 cursor-default break-words font-bold leading-tight text-primary line-clamp-2"
@@ -140,7 +166,7 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
             onDoubleClick={startEditing}
             title={activity.name}
           >
-            {displayLabel}
+            {activity.name}
           </h2>
         )}
 
