@@ -1,6 +1,7 @@
 import { useTaplogStore } from '../../store/taplogStore'
 import { hexToRgba } from '../../utils/color'
 import { PAUSE_COLOR } from '../../utils/tileColors'
+import { PauseIcon } from '../icons'
 
 interface Props {
   tileWidth?: number
@@ -61,12 +62,10 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
           height: btnSize,
           minWidth: 80,
           minHeight: 80,
-          fontSize: iconSize,
           background: hexToRgba(PAUSE_COLOR, isIdle ? 0.22 : 0.1),
-          color: PAUSE_COLOR,
         }}
       >
-        ⏸
+        <PauseIcon size={iconSize} color={PAUSE_COLOR} />
       </button>
 
       {/* Bottom status */}
