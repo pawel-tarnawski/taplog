@@ -1,6 +1,7 @@
 import { useRef, useState, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
+import { PlusIcon } from '../icons'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
 
@@ -16,7 +17,12 @@ function todayLabel(): string {
   })
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  onAddActivity: () => void
+  addBtnRef: React.RefObject<HTMLButtonElement | null>
+}
+
+export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
   const activities = useTaplogStore((s) => s.activities)
   const undoSnapshot = useTaplogStore((s) => s.undoSnapshot)
   const totalMs = useTaplogStore((s) => s.totalMs)
@@ -38,6 +44,8 @@ export function Sidebar() {
     return () => observer.disconnect()
   }, [])
 
+  const hasActivities = activities.length > 0
+
   return (
     <>
       {/* Desktop: fixed right panel */}
@@ -52,7 +60,10 @@ export function Sidebar() {
           total={total}
           onResetAll={resetAll}
           onUndo={undo}
+          onAddActivity={onAddActivity}
+          addBtnRef={addBtnRef}
           sidebarWidth={sidebarWidth}
+          hasActivities={hasActivities}
         />
       </aside>
 
@@ -68,6 +79,16 @@ export function Sidebar() {
           </p>
         </div>
         <div className="flex gap-2">
+          {hasActivities && (
+            <button
+              onClick={onAddActivity}
+              aria-label="Add activity"
+              className="min-h-[48px] rounded-lg px-3 text-[#3b82f6] transition-colors hover:bg-white/5"
+              style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+            >
+              <PlusIcon size={16} />
+            </button>
+          )}
           {undoSnapshot && (
             <button
               onClick={undo}
@@ -102,10 +123,17 @@ interface ContentProps {
   total: number
   onResetAll: () => void
   onUndo: () => void
+  onAddActivity: () => void
+  addBtnRef: React.RefObject<HTMLButtonElement | null>
   sidebarWidth: number
+  hasActivities: boolean
 }
 
-function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, sidebarWidth }: ContentProps) {
+function SidebarContent({
+  activities, undoSnapshot, total,
+  onResetAll, onUndo, onAddActivity, addBtnRef,
+  sidebarWidth, hasActivities,
+}: ContentProps) {
   const labelAvailablePx = Math.max(0, sidebarWidth - LABEL_OVERHEAD_PX)
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto">
@@ -126,7 +154,7 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, s
       </div>
 
       {/* Per-tile breakdown */}
-      {activities.length > 0 && (
+      {hasActivities && (
         <div className="flex-1 overflow-y-auto">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">Activities</p>
           <ul className="mt-2 space-y-2">
@@ -155,6 +183,18 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, s
 
       {/* Actions */}
       <div className="mt-auto flex flex-col gap-2">
+        {hasActivities && (
+          <button
+            ref={addBtnRef}
+            onClick={onAddActivity}
+            aria-label="Add activity"
+            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
+            style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+          >
+            <PlusIcon size={14} />
+            Add activity
+          </button>
+        )}
         {undoSnapshot && (
           <button
             onClick={onUndo}
