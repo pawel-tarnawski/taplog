@@ -24,8 +24,8 @@ describe('Sidebar', () => {
   it('shows total accumulated time for all activities', () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'Work', accumulatedMs: 3_600_000, isRunning: false, startedAt: null },
-        { id: '2', name: 'Break', accumulatedMs: 900_000, isRunning: false, startedAt: null },
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 3_600_000, isRunning: false, startedAt: null },
+        { id: '2', name: 'Break', color: '#a855f7', accumulatedMs: 900_000, isRunning: false, startedAt: null },
       ],
     })
     render(<Sidebar />)
@@ -35,7 +35,7 @@ describe('Sidebar', () => {
   it('shows per-activity breakdown', () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'Work', accumulatedMs: 3_600_000, isRunning: false, startedAt: null },
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 3_600_000, isRunning: false, startedAt: null },
       ],
     })
     render(<Sidebar />)
@@ -62,7 +62,7 @@ describe('Sidebar', () => {
   it('calls undo when undo button is clicked', async () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'Work', accumulatedMs: 0, isRunning: false, startedAt: null },
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null },
       ],
       undoSnapshot: {
         timestamp: Date.now(),
@@ -79,7 +79,7 @@ describe('Sidebar', () => {
   it('calls resetAll when Reset all button is clicked', async () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'Work', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
       ],
     })
     render(<Sidebar />)

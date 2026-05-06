@@ -4,15 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        base: '#0f1117',
+        base: '#0e1016',
         tile: {
-          DEFAULT: '#1a1d27',
-          hover: '#1f2335',
+          DEFAULT: '#181b26',
+          hover: '#1e2133',
         },
-        sidebar: '#13151f',
-        accent: '#3b82f6',
-        primary: '#e2e8f0',
-        muted: '#64748b',
+        sidebar: '#12141e',
+        primary: '#c8c4d4',
+        muted: '#6b6d85',
         danger: '#ef4444',
         success: '#22c55e',
       },
@@ -22,12 +21,6 @@ export default {
       },
       animation: {
         'tile-pulse': 'tile-pulse 2s ease-in-out infinite',
-      },
-      keyframes: {
-        'tile-pulse': {
-          '0%, 100%': { 'box-shadow': '0 0 24px rgba(59, 130, 246, 0.35)' },
-          '50%': { 'box-shadow': '0 0 40px rgba(59, 130, 246, 0.6)' },
-        },
       },
     },
   },

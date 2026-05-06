@@ -1,6 +1,12 @@
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
 
+const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
+
+function totalColor(ms: number): string {
+  return ms >= EIGHT_HOURS_MS ? '#4ade80' : '#fb923c'
+}
+
 function todayLabel(): string {
   return new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -21,7 +27,10 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop: fixed right panel */}
-      <aside className="fixed right-0 top-0 hidden h-screen w-64 flex-col border-l border-white/10 bg-sidebar p-5 sm:flex">
+      <aside
+        className="fixed right-0 top-0 hidden h-screen w-64 flex-col bg-sidebar p-5 sm:flex"
+        style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <SidebarContent
           activities={activities}
           undoSnapshot={undoSnapshot}
@@ -32,17 +41,23 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile: fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between border-t border-white/10 bg-sidebar px-4 py-3 sm:hidden">
+      <div
+        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 sm:hidden"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <div>
           <p className="text-xs text-muted">Total</p>
-          <p className="font-mono text-base font-medium text-primary">{formatMs(total)}</p>
+          <p className="font-mono text-base font-medium" style={{ color: totalColor(total) }}>
+            {formatMs(total)}
+          </p>
         </div>
         <div className="flex gap-2">
           {undoSnapshot && (
             <button
               onClick={undo}
               aria-label="Undo reset"
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-accent ring-1 ring-accent/40 transition-colors hover:bg-accent/10"
+              className="min-h-[48px] rounded-lg px-3 text-xs font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
+              style={{ border: '1px solid rgba(59,130,246,0.4)' }}
             >
               Undo
             </button>
@@ -50,7 +65,8 @@ export function Sidebar() {
           <button
             onClick={resetAll}
             aria-label="Reset all"
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-danger ring-1 ring-danger/40 transition-colors hover:bg-danger/10"
+            className="min-h-[48px] rounded-lg px-3 text-xs font-medium text-danger transition-colors hover:bg-white/5"
+            style={{ border: '1px solid rgba(239,68,68,0.4)' }}
           >
             Reset all
           </button>
@@ -82,7 +98,9 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }:
       {/* Total */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted">Total</p>
-        <p className="mt-1 font-mono text-2xl font-medium text-primary">{formatMs(total)}</p>
+        <p className="mt-1 font-mono text-2xl font-medium" style={{ color: totalColor(total) }}>
+          {formatMs(total)}
+        </p>
       </div>
 
       {/* Per-tile breakdown */}
@@ -96,7 +114,11 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }:
                 (a.isRunning && a.startedAt !== null ? Date.now() - a.startedAt : 0)
               return (
                 <li key={a.id} className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-sm text-primary" title={a.name}>
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-sm text-primary" title={a.name}>
+                    <span
+                      className="inline-block h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: a.color }}
+                    />
                     {a.name}
                   </span>
                   <span className="shrink-0 font-mono text-xs text-muted">{formatMs(ms)}</span>
@@ -113,7 +135,8 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }:
           <button
             onClick={onUndo}
             aria-label="Undo reset"
-            className="w-full rounded-lg py-2 text-sm font-medium text-accent ring-1 ring-accent/40 transition-colors hover:bg-accent/10"
+            className="w-full min-h-[48px] rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
+            style={{ border: '1px solid rgba(59,130,246,0.4)' }}
           >
             Undo
           </button>
@@ -121,7 +144,8 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo }:
         <button
           onClick={onResetAll}
           aria-label="Reset all"
-          className="w-full rounded-lg py-2 text-sm font-medium text-danger ring-1 ring-danger/40 transition-colors hover:bg-danger/10"
+          className="w-full min-h-[48px] rounded-lg text-sm font-medium text-danger transition-colors hover:bg-white/5"
+          style={{ border: '1px solid rgba(239,68,68,0.4)' }}
         >
           Reset all
         </button>
