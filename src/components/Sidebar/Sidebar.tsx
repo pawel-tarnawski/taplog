@@ -52,7 +52,7 @@ export function Sidebar() {
           total={total}
           onResetAll={resetAll}
           onUndo={undo}
-          compact={sidebarWidth < 200}
+          compact={sidebarWidth < 230}
         />
       </aside>
 
@@ -131,12 +131,14 @@ function SidebarContent({ activities, undoSnapshot, total, onResetAll, onUndo, c
                 (a.isRunning && a.startedAt !== null ? Date.now() - a.startedAt : 0)
               return (
                 <li key={a.id} className="flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-1.5 truncate text-sm text-primary" title={a.name}>
+                  <span className="flex min-w-0 items-center gap-1.5 text-sm text-primary">
                     <span
                       className="inline-block h-2 w-2 shrink-0 rounded-full"
                       style={{ background: a.color }}
                     />
-                    {compact && a.code ? a.code : a.name}
+                    <span className="min-w-0 truncate" title={a.name}>
+                      {compact && a.code ? a.code : a.name}
+                    </span>
                   </span>
                   <span className="shrink-0 font-mono text-xs text-muted">{formatMs(ms)}</span>
                 </li>
