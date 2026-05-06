@@ -8,13 +8,15 @@ interface Props {
   tileHeight?: number
 }
 
+const TILE_PAD = 24
+
 function pauseScale(w: number, h: number) {
-  const d = Math.min(w || 200, h || 200)
+  const d = Math.max(40, Math.min((w || 160) - TILE_PAD, (h || 160) - TILE_PAD))
   return {
-    btnSize:   Math.max(80,  Math.min(Math.round(d * 0.44), 220)),
-    iconSize:  Math.max(20,  Math.min(Math.round(d * 0.18),  88)),
-    nameSize:  Math.max(15,  Math.min(Math.round(d * 0.10),  52)),
-    dotSize:   Math.max(10,  Math.min(Math.round(d * 0.055), 18)),
+    btnSize:  Math.max(44, Math.min(Math.round(d * 0.52), 200)),
+    iconSize: Math.max(18, Math.min(Math.round(d * 0.22),  88)),
+    nameSize: Math.max(12, Math.min(Math.round(d * 0.115), 52)),
+    dotSize:  Math.max(9,  Math.min(Math.round(d * 0.06),  18)),
   }
 }
 
@@ -27,19 +29,20 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
 
   const { btnSize, iconSize, nameSize, dotSize } = pauseScale(tileWidth, tileHeight)
 
-  const glowDim = hexToRgba(PAUSE_COLOR, 0.3)
+  const glowDim    = hexToRgba(PAUSE_COLOR, 0.3)
   const glowBright = hexToRgba(PAUSE_COLOR, 0.55)
 
   return (
     <article
       className={[
-        'relative flex flex-col items-center justify-between rounded-xl p-3 transition-all duration-200',
+        'relative flex flex-col items-center justify-between overflow-hidden rounded-xl p-3',
+        'transition-all duration-200',
         isIdle ? 'animate-tile-pulse' : '',
       ].join(' ')}
       style={{
         border: `${isIdle ? '2px' : '1px'} solid ${isIdle ? PAUSE_COLOR : hexToRgba(PAUSE_COLOR, 0.28)}`,
         backgroundColor: 'var(--bg-tile)',
-        '--tile-glow-dim': `0 0 18px ${glowDim}`,
+        '--tile-glow-dim':    `0 0 18px ${glowDim}`,
         '--tile-glow-bright': `0 0 32px ${glowBright}`,
       } as React.CSSProperties}
     >
@@ -58,9 +61,9 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         aria-pressed={isIdle}
         className="flex shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-95 disabled:cursor-default"
         style={{
-          width: btnSize,
-          height: btnSize,
-          minWidth: 80,
+          width:    btnSize,
+          height:   btnSize,
+          minWidth:  80,
           minHeight: 80,
           background: hexToRgba(PAUSE_COLOR, isIdle ? 0.22 : 0.1),
         }}
@@ -68,7 +71,7 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         <PauseIcon size={iconSize} color={PAUSE_COLOR} />
       </button>
 
-      {/* Bottom status */}
+      {/* Bottom status — mirrors ActivityTile layout for visual alignment */}
       <div className="flex w-full flex-col items-center">
         <span
           className="font-medium"
@@ -77,8 +80,10 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         >
           ● Nothing tracked
         </span>
-        {/* Spacer to match ActivityTile timer row height */}
-        <div className="font-mono font-medium text-transparent select-none" style={{ fontSize: Math.max(11, Math.round(Math.min(tileWidth || 200, tileHeight || 200) * 0.08)) }}>
+        <div
+          className="font-mono font-medium text-transparent select-none"
+          style={{ fontSize: Math.max(10, Math.round(Math.min((tileWidth || 160) - TILE_PAD, (tileHeight || 160) - TILE_PAD) * 0.09)) }}
+        >
           00:00:00
         </div>
       </div>

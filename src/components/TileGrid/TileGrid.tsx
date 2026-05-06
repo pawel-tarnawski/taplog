@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { ActivityTile } from '../ActivityTile'
 import { PauseTile } from '../PauseTile'
@@ -13,18 +13,23 @@ function computeGridLayout(
   containerWidth: number,
   containerHeight: number,
 ): { cols: number; rows: number } {
-  if (count <= 0 || containerWidth <= 0 || containerHeight <= 0) return { cols: 1, rows: 1 }
+  if (count <= 0) return { cols: 1, rows: 1 }
 
-  const MIN_CELL = 140
-  let bestCols = Math.max(1, Math.ceil(Math.sqrt(count)))
+  // Before container is measured, use sqrt heuristic so there are no implicit rows
+  const fallbackCols = Math.max(1, Math.ceil(Math.sqrt(count)))
+  if (containerWidth <= 0 || containerHeight <= 0) {
+    return { cols: fallbackCols, rows: Math.ceil(count / fallbackCols) }
+  }
+
+  let bestCols = fallbackCols
   let bestScore = Infinity
 
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols)
     const cellW = (containerWidth - (cols - 1) * GAP) / cols
     const cellH = (containerHeight - (rows - 1) * GAP) / rows
-    if (cellW < MIN_CELL || cellH < MIN_CELL) continue
-    const score = Math.max(cellW / cellH, cellH / cellW)
+    if (cellW <= 0 || cellH <= 0) continue
+    const score = Math.max(cellW / cellH, cellH / cellW) // 1 = perfect square
     if (score < bestScore) {
       bestScore = score
       bestCols = cols
@@ -46,9 +51,17 @@ export function TileGrid() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
 
-  useEffect(() => {
+  // useLayoutEffect fires before the browser paints — we get the real size on the
+  // very first render so there is no flash of wrong cols/rows.
+  useLayoutEffect(() => {
     const el = containerRef.current
     if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    if (rect.width > 0 && rect.height > 0) {
+      setContainerSize({ width: rect.width, height: rect.height })
+    }
+
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect
       setContainerSize({ width, height })
@@ -57,17 +70,15 @@ export function TileGrid() {
     return () => observer.disconnect()
   }, [])
 
-  const totalItems = activities.length + 2
+  const totalItems = activities.length + 2 // +PauseTile +AddButton
   const { cols, rows } = computeGridLayout(totalItems, containerSize.width, containerSize.height)
 
-  // Actual cell dimensions (accounting for gap)
-  const tileWidth = cols > 0 ? (containerSize.width - (cols - 1) * GAP) / cols : 0
+  const tileWidth  = cols > 0 ? (containerSize.width  - (cols - 1) * GAP) / cols : 0
   const tileHeight = rows > 0 ? (containerSize.height - (rows - 1) * GAP) / rows : 0
 
-  // Scale "+" add button text with tile size
-  const minDim = Math.min(tileWidth || 200, tileHeight || 200)
-  const addPlusSize = Math.max(24, Math.round(minDim * 0.18))
-  const addLabelSize = Math.max(11, Math.round(minDim * 0.07))
+  const minDim = Math.min(tileWidth || 160, tileHeight || 160)
+  const addPlusSize  = Math.max(20, Math.round(minDim * 0.18))
+  const addLabelSize = Math.max(10, Math.round(minDim * 0.07))
 
   return (
     <div ref={containerRef} className="h-full w-full">
@@ -75,7 +86,7 @@ export function TileGrid() {
         className="grid h-full gap-3"
         style={{
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
+          gridTemplateRows:    `repeat(${rows}, 1fr)`,
         }}
       >
         {activities.map((activity) => (
