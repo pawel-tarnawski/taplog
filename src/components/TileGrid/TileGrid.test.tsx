@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TileGrid } from './TileGrid'
@@ -7,6 +7,10 @@ import { useTaplogStore } from '../../store/taplogStore'
 beforeEach(() => {
   localStorage.clear()
   useTaplogStore.setState({ activities: [], undoSnapshot: null })
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('TileGrid', () => {
@@ -67,5 +71,44 @@ describe('TileGrid', () => {
     render(<TileGrid />)
     await userEvent.click(screen.getByRole('button', { name: /add activity/i }))
     expect(screen.getByRole('button', { name: /^add$/i })).toBeDisabled()
+  })
+
+  it('opens edit modal when Rename is selected from activity context menu', async () => {
+    useTaplogStore.setState({
+      activities: [
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null },
+      ],
+    })
+    render(<TileGrid />)
+    await userEvent.click(screen.getByRole('button', { name: /activity options/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /rename/i }))
+    expect(screen.getByRole('dialog', { name: /edit activity/i })).toBeInTheDocument()
+  })
+
+  it('saves renamed activity from the edit modal', async () => {
+    useTaplogStore.setState({
+      activities: [
+        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null },
+      ],
+    })
+    render(<TileGrid />)
+    await userEvent.click(screen.getByRole('button', { name: /activity options/i }))
+    await userEvent.click(screen.getByRole('menuitem', { name: /rename/i }))
+    const nameInput = screen.getByLabelText('Activity name')
+    await userEvent.clear(nameInput)
+    await userEvent.type(nameInput, 'Deep Work')
+    await userEvent.click(screen.getByRole('button', { name: /save/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(useTaplogStore.getState().activities[0].name).toBe('Deep Work')
+  })
+
+  it('uses real container dimensions when getBoundingClientRect returns a size', () => {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 800, height: 600, top: 0, left: 0, bottom: 600, right: 800, x: 0, y: 0,
+      toJSON: () => ({}),
+    })
+    render(<TileGrid />)
+    // Grid renders without error when dimensions are available on first layout
+    expect(screen.getByRole('button', { name: /add activity/i })).toBeInTheDocument()
   })
 })

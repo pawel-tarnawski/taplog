@@ -28,7 +28,7 @@ export function Sidebar() {
     <>
       {/* Desktop: fixed right panel */}
       <aside
-        className="fixed right-0 top-0 hidden h-screen w-64 flex-col bg-sidebar p-5 sm:flex"
+        className="fixed right-0 top-0 hidden h-screen w-64 flex-col bg-sidebar p-5 min-[480px]:flex"
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <SidebarContent
@@ -42,7 +42,7 @@ export function Sidebar() {
 
       {/* Mobile: fixed bottom bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 sm:hidden"
+        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 min-[480px]:hidden"
         style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div>
