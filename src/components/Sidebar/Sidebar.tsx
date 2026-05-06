@@ -28,7 +28,7 @@ export function Sidebar() {
     <>
       {/* Desktop: fixed right panel */}
       <aside
-        className="fixed right-0 top-0 hidden h-screen w-64 flex-col bg-sidebar p-5 min-[480px]:flex"
+        className="fixed right-0 top-0 hidden h-screen w-[20vw] max-w-64 flex-col bg-sidebar p-5 min-[480px]:flex"
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <SidebarContent

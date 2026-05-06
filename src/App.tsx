@@ -7,7 +7,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-base">
-      <main className="flex-1 overflow-hidden p-3 pb-20 min-[480px]:pb-3 min-[480px]:pr-64">
+      <main className="flex-1 p-3 pb-20 min-[480px]:pb-3 min-[480px]:pr-[calc(min(20vw,256px)+12px)]">
         <TileGrid />
       </main>
       <Sidebar />

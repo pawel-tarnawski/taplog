@@ -29,8 +29,8 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
 
   const { btnSize, iconSize, nameSize, dotSize } = pauseScale(tileWidth, tileHeight)
 
-  const glowDim    = hexToRgba(PAUSE_COLOR, 0.3)
-  const glowBright = hexToRgba(PAUSE_COLOR, 0.55)
+  const glowDim    = hexToRgba(PAUSE_COLOR, 0.45)
+  const glowBright = hexToRgba(PAUSE_COLOR, 0.75)
 
   return (
     <article
@@ -42,8 +42,8 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
       style={{
         border: `${isIdle ? '2px' : '1px'} solid ${isIdle ? PAUSE_COLOR : hexToRgba(PAUSE_COLOR, 0.28)}`,
         backgroundColor: 'var(--bg-tile)',
-        '--tile-glow-dim':    `0 0 18px ${glowDim}`,
-        '--tile-glow-bright': `0 0 32px ${glowBright}`,
+        '--tile-glow-dim':    `0 0 24px ${glowDim}`,
+        '--tile-glow-bright': `0 0 48px ${glowBright}`,
       } as React.CSSProperties}
     >
       {/* Top label */}

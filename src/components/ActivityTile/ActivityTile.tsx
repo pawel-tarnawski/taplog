@@ -58,8 +58,8 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
     tileScale(tileWidth, tileHeight, displayLabel.length)
 
   const color    = activity.color
-  const glowDim    = hexToRgba(color, 0.3)
-  const glowBright = hexToRgba(color, 0.55)
+  const glowDim    = hexToRgba(color, 0.45)
+  const glowBright = hexToRgba(color, 0.75)
   const borderColor = activity.isRunning ? color : hexToRgba(color, 0.28)
   const borderWidth = activity.isRunning ? '2px' : '1px'
   const btnBg      = activity.isRunning ? hexToRgba(color, 0.22) : hexToRgba(color, 0.12)
@@ -116,8 +116,8 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
       style={{
         border: `${borderWidth} solid ${borderColor}`,
         backgroundColor: 'var(--bg-tile)',
-        '--tile-glow-dim':    `0 0 18px ${glowDim}`,
-        '--tile-glow-bright': `0 0 32px ${glowBright}`,
+        '--tile-glow-dim':    `0 0 24px ${glowDim}`,
+        '--tile-glow-bright': `0 0 48px ${glowBright}`,
       } as React.CSSProperties}
     >
       {/* ── Top row: name + menu ───────────────────────────────────────── */}
