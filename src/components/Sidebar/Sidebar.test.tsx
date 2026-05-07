@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar'
 import { useTaplogStore } from '../../store/taplogStore'
 
 const defaultProps = {
+  showSidebar: true,
   onAddActivity: vi.fn(),
   addBtnRef: createRef<HTMLButtonElement>(),
 }

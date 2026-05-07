@@ -18,11 +18,12 @@ function todayLabel(): string {
 }
 
 interface SidebarProps {
+  showSidebar: boolean
   onAddActivity: () => void
   addBtnRef: React.RefObject<HTMLButtonElement | null>
 }
 
-export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
+export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps) {
   const activities = useTaplogStore((s) => s.activities)
   const undoSnapshot = useTaplogStore((s) => s.undoSnapshot)
   const totalMs = useTaplogStore((s) => s.totalMs)
@@ -51,7 +52,7 @@ export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
       {/* Desktop: fixed right panel */}
       <aside
         ref={asideRef}
-        className="fixed right-0 top-0 hidden h-screen w-[20vw] max-w-64 flex-col bg-sidebar p-5 min-[300px]:flex"
+        className={`fixed right-0 top-0 h-screen-safe w-[20vw] max-w-64 flex-col bg-sidebar p-5 ${showSidebar ? 'flex' : 'hidden'}`}
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <SidebarContent
@@ -69,7 +70,7 @@ export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
 
       {/* Mobile: fixed bottom bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 min-[300px]:hidden"
+        className={`fixed bottom-0 left-0 right-0 items-center justify-between bg-sidebar px-4 py-3 ${showSidebar ? 'hidden' : 'flex'}`}
         style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div>
