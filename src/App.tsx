@@ -5,6 +5,14 @@ import { TileGrid } from './components/TileGrid'
 import { Sidebar } from './components/Sidebar'
 import { AddActivityModal } from './components/AddActivityModal'
 
+const SIDEBAR_MIN = 160
+const SIDEBAR_MAX = 256
+const SIDEBAR_BREAKPOINT = 300
+
+function sidebarWidthFor(vw: number) {
+  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(vw * 0.2)))
+}
+
 export default function App() {
   useTick()
 
@@ -12,14 +20,14 @@ export default function App() {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const addBtnRef = useRef<HTMLButtonElement>(null)
 
-  // JS-driven layout: CSS media queries are unreliable in some mobile browsers
-  // (e.g. Via Browser locks viewport to 320px regardless of orientation).
-  // window.innerWidth is always correct.
-  const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 300)
+  const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= SIDEBAR_BREAKPOINT)
+  const [sidebarW, setSidebarW]       = useState(() => sidebarWidthFor(window.innerWidth))
 
   useLayoutEffect(() => {
     const update = () => {
-      setShowSidebar(window.innerWidth >= 300)
+      const vw = window.innerWidth
+      setShowSidebar(vw >= SIDEBAR_BREAKPOINT)
+      setSidebarW(sidebarWidthFor(vw))
       document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
     }
     update()
@@ -33,7 +41,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen-safe bg-base">
-      <main className={`flex-1 p-3 ${showSidebar ? 'pb-3 pr-[calc(min(20vw,256px)+12px)]' : 'pb-20'}`}>
+      <main
+        className="flex-1 p-3"
+        style={showSidebar
+          ? { paddingBottom: '12px', paddingRight: `${sidebarW + 12}px` }
+          : { paddingBottom: '80px' }}
+      >
         <TileGrid onAddActivity={() => setAddModalOpen(true)} />
       </main>
       <Sidebar showSidebar={showSidebar} onAddActivity={() => setAddModalOpen(true)} addBtnRef={addBtnRef} />
