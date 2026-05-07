@@ -63,8 +63,6 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         style={{
           width:    btnSize,
           height:   btnSize,
-          minWidth:  80,
-          minHeight: 80,
           background: hexToRgba(PAUSE_COLOR, isIdle ? 0.22 : 0.1),
         }}
       >
