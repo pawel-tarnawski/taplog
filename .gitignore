@@ -26,5 +26,7 @@ dist-ssr
 # Claude Code
 .claude/
 
-# Coverage
+# Coverage & test output
 coverage/
+playwright-report/
+test-results/
