@@ -65,20 +65,20 @@ test('add 5 tiles → grid reflows without overflow', async ({ page }) => {
   expect(hasHorizontalOverflow).toBe(false)
 })
 
-test('toggle button meets ≥ 48×48 px tap target', async ({ page }) => {
+test('toggle button meets ≥ 44×44 px tap target', async ({ page }) => {
   await addActivity(page, 'Work')
   const box = await page.getByRole('button', { name: 'Start tracking Work' }).boundingBox()
   expect(box).not.toBeNull()
-  expect(box!.width).toBeGreaterThanOrEqual(48)
-  expect(box!.height).toBeGreaterThanOrEqual(48)
+  expect(box!.width).toBeGreaterThanOrEqual(44)
+  expect(box!.height).toBeGreaterThanOrEqual(44)
 })
 
-test('options button meets ≥ 48×48 px tap target', async ({ page }) => {
+test('options button meets ≥ 44×44 px tap target', async ({ page }) => {
   await addActivity(page, 'Work')
   const box = await page.getByRole('button', { name: 'Activity options' }).boundingBox()
   expect(box).not.toBeNull()
-  expect(box!.width).toBeGreaterThanOrEqual(48)
-  expect(box!.height).toBeGreaterThanOrEqual(48)
+  expect(box!.width).toBeGreaterThanOrEqual(44)
+  expect(box!.height).toBeGreaterThanOrEqual(44)
 })
 
 test('day-change resets times but keeps activity names', async ({ page }) => {

@@ -29,7 +29,7 @@ function tileScale(tileWidth: number, tileHeight: number, labelLen: number) {
     nameSize:    Math.max(12,  Math.round(rawName * lenFactor)),
     timerSize:   Math.max(10,  Math.min(Math.round(d * 0.09),  40)),
     dotSize:     Math.max(9,   Math.min(Math.round(d * 0.06),  18)),
-    menuBtnSize: Math.max(48,  Math.min(Math.round(d * 0.22),  72)),
+    menuBtnSize: Math.max(44,  Math.min(Math.round(d * 0.22),  72)),
   }
 }
 
@@ -233,8 +233,6 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
         style={{
           width:    btnSize,
           height:   btnSize,
-          minWidth:  80,
-          minHeight: 80,
           background: btnBg,
         }}
       >

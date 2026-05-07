@@ -97,8 +97,8 @@ export function TileGrid({ onAddActivity }: Props) {
       <div
         className="grid h-full gap-3"
         style={{
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows:    `repeat(${rows}, 1fr)`,
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridTemplateRows:    `repeat(${rows}, minmax(0, 1fr))`,
         }}
       >
         {activities.map((activity) => (
