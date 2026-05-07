@@ -107,6 +107,45 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
     setMenuOpen(false)
   }
 
+  // ── Micro tile: tile too small for full layout — whole tile is the tap target ──
+  const isMicro = tileWidth > 0 && tileHeight > 0 && (tileHeight < 100 || tileWidth < 60)
+  if (isMicro) {
+    const dim = Math.min(tileWidth, tileHeight)
+    const labelSize = Math.max(8, Math.round(dim * 0.22))
+    const label = activity.code ?? activity.name
+    return (
+      <article
+        className={['relative overflow-hidden rounded-lg transition-all duration-200', activity.isRunning ? 'animate-tile-pulse' : ''].join(' ')}
+        style={{
+          border: `${borderWidth} solid ${borderColor}`,
+          backgroundColor: 'var(--bg-tile)',
+          '--tile-glow-dim':    `0 0 24px ${hexToRgba(color, 0.45)}`,
+          '--tile-glow-bright': `0 0 48px ${hexToRgba(color, 0.75)}`,
+        } as React.CSSProperties}
+      >
+        <button
+          onClick={() => toggleTimer(activity.id)}
+          aria-pressed={activity.isRunning}
+          aria-label={activity.isRunning ? `Stop tracking ${activity.name}` : `Start tracking ${activity.name}`}
+          className="flex h-full w-full items-center justify-center"
+          title={activity.name}
+        >
+          <span
+            className="rounded font-mono font-bold leading-none"
+            style={{
+              fontSize: labelSize,
+              color,
+              background: hexToRgba(color, 0.2),
+              padding: `${Math.max(1, Math.round(labelSize * 0.2))}px ${Math.max(2, Math.round(labelSize * 0.35))}px`,
+            }}
+          >
+            {label}
+          </span>
+        </button>
+      </article>
+    )
+  }
+
   return (
     <article
       className={[
