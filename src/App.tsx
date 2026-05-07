@@ -5,9 +5,21 @@ import { TileGrid } from './components/TileGrid'
 import { Sidebar } from './components/Sidebar'
 import { AddActivityModal } from './components/AddActivityModal'
 
-function useAppHeight() {
+export default function App() {
+  useTick()
+
+  const addActivity = useTaplogStore((s) => s.addActivity)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const addBtnRef = useRef<HTMLButtonElement>(null)
+
+  // JS-driven layout: CSS media queries are unreliable in some mobile browsers
+  // (e.g. Via Browser locks viewport to 320px regardless of orientation).
+  // window.innerWidth is always correct.
+  const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= 300)
+
   useLayoutEffect(() => {
     const update = () => {
+      setShowSidebar(window.innerWidth >= 300)
       document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
     }
     update()
@@ -18,22 +30,13 @@ function useAppHeight() {
       window.removeEventListener('orientationchange', update)
     }
   }, [])
-}
-
-export default function App() {
-  useTick()
-  useAppHeight()
-
-  const addActivity = useTaplogStore((s) => s.addActivity)
-  const [addModalOpen, setAddModalOpen] = useState(false)
-  const addBtnRef = useRef<HTMLButtonElement>(null)
 
   return (
     <div className="flex h-screen-safe bg-base">
-      <main className="flex-1 p-3 pb-20 min-[300px]:pb-3 min-[300px]:pr-[calc(min(20vw,256px)+12px)]">
+      <main className={`flex-1 p-3 ${showSidebar ? 'pb-3 pr-[calc(min(20vw,256px)+12px)]' : 'pb-20'}`}>
         <TileGrid onAddActivity={() => setAddModalOpen(true)} />
       </main>
-      <Sidebar onAddActivity={() => setAddModalOpen(true)} addBtnRef={addBtnRef} />
+      <Sidebar showSidebar={showSidebar} onAddActivity={() => setAddModalOpen(true)} addBtnRef={addBtnRef} />
 
       {addModalOpen && (
         <AddActivityModal
