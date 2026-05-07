@@ -51,7 +51,7 @@ export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
       {/* Desktop: fixed right panel */}
       <aside
         ref={asideRef}
-        className="fixed right-0 top-0 hidden h-screen w-[20vw] max-w-64 flex-col bg-sidebar p-5 min-[380px]:flex"
+        className="fixed right-0 top-0 hidden h-screen w-[20vw] max-w-64 flex-col bg-sidebar p-5 min-[300px]:flex"
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <SidebarContent
@@ -69,7 +69,7 @@ export function Sidebar({ onAddActivity, addBtnRef }: SidebarProps) {
 
       {/* Mobile: fixed bottom bar */}
       <div
-        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 min-[380px]:hidden"
+        className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-sidebar px-4 py-3 min-[300px]:hidden"
         style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
       >
         <div>

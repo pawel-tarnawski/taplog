@@ -132,4 +132,23 @@ describe('ActivityTile', () => {
     render(<ActivityTile activity={withCode} tileWidth={300} tileHeight={300} onEdit={onEdit} />)
     expect(screen.getByText('Work')).toBeInTheDocument()
   })
+
+  it('renders micro tile with badge when tile is short', () => {
+    const withCode: Activity = { ...base, code: 'WRK' }
+    render(<ActivityTile activity={withCode} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+    expect(screen.getByRole('button', { name: /start tracking/i })).toBeInTheDocument()
+    expect(screen.getByText('WRK')).toBeInTheDocument()
+  })
+
+  it('renders micro tile with name when no code and tile is short', () => {
+    render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+    expect(screen.getByRole('button', { name: /start tracking/i })).toBeInTheDocument()
+    expect(screen.getByText('Work')).toBeInTheDocument()
+  })
+
+  it('toggles timer in micro tile mode', async () => {
+    render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /start tracking/i }))
+    expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+  })
 })

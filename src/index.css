@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --app-height:    100svh;  /* overridden by JS to window.innerHeight */
   --bg-base:       #0e1016;
   --bg-tile:       #181b26;
   --bg-tile-hover: #1e2133;
@@ -27,12 +28,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 100svh = height with browser chrome visible (address bar shown).
-   Falls back to 100vh on browsers that don't support svh (old Android). */
+/* JS sets --app-height = window.innerHeight on load/resize/orientationchange.
+   Falls back through 100svh → 100vh for browsers where JS hasn't run yet. */
 @layer utilities {
   .h-screen-safe {
     height: 100vh;
     height: 100svh;
+    height: var(--app-height);
   }
 }
 

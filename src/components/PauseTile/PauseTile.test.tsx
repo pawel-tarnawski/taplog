@@ -50,4 +50,15 @@ describe('PauseTile', () => {
     await userEvent.click(screen.getByRole('button', { name: /pause tracking/i }))
     expect(useTaplogStore.getState().activities[0].isRunning).toBe(false)
   })
+
+  it('renders micro tile when tile is short', () => {
+    render(<PauseTile tileWidth={120} tileHeight={70} />)
+    expect(screen.getByRole('button', { name: /pause tracking/i })).toBeInTheDocument()
+    expect(screen.queryByText('Pause')).not.toBeInTheDocument()
+  })
+
+  it('micro pause button is disabled when nothing is tracking', () => {
+    render(<PauseTile tileWidth={120} tileHeight={70} />)
+    expect(screen.getByRole('button', { name: /pause tracking/i })).toBeDisabled()
+  })
 })

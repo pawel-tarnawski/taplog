@@ -32,6 +32,33 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
   const glowDim    = hexToRgba(PAUSE_COLOR, 0.45)
   const glowBright = hexToRgba(PAUSE_COLOR, 0.75)
 
+  // ── Micro tile ────────────────────────────────────────────────────────────
+  const isMicro = tileWidth > 0 && tileHeight > 0 && (tileHeight < 100 || tileWidth < 60)
+  if (isMicro) {
+    const dim = Math.min(tileWidth, tileHeight)
+    return (
+      <article
+        className={['relative overflow-hidden rounded-lg transition-all duration-200', isIdle ? 'animate-tile-pulse' : ''].join(' ')}
+        style={{
+          border: `${isIdle ? '2px' : '1px'} solid ${isIdle ? PAUSE_COLOR : hexToRgba(PAUSE_COLOR, 0.28)}`,
+          backgroundColor: 'var(--bg-tile)',
+          '--tile-glow-dim':    `0 0 24px ${glowDim}`,
+          '--tile-glow-bright': `0 0 48px ${glowBright}`,
+        } as React.CSSProperties}
+      >
+        <button
+          onClick={() => runningActivity && toggleTimer(runningActivity.id)}
+          disabled={isIdle}
+          aria-label="Pause tracking"
+          aria-pressed={isIdle}
+          className="flex h-full w-full items-center justify-center disabled:cursor-default"
+        >
+          <PauseIcon size={Math.max(10, Math.round(dim * 0.38))} color={PAUSE_COLOR} />
+        </button>
+      </article>
+    )
+  }
+
   return (
     <article
       className={[
