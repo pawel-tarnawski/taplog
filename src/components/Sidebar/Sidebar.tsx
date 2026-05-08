@@ -52,7 +52,7 @@ export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps)
       {/* Desktop: fixed right panel */}
       <aside
         ref={asideRef}
-        className={`fixed right-0 top-0 h-screen-safe w-[20vw] max-w-64 flex-col bg-sidebar p-5 ${showSidebar ? 'flex' : 'hidden'}`}
+        className={`fixed right-0 top-0 h-screen-safe w-[20vw] min-w-[160px] max-w-64 flex-col bg-sidebar p-3 ${showSidebar ? 'flex' : 'hidden'}`}
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
         <SidebarContent
@@ -114,8 +114,8 @@ export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps)
   )
 }
 
-// Overhead = padding (40) + dot+gap (14) + item gap (8) + time counter (56)
-const LABEL_OVERHEAD_PX = 118
+// Overhead = padding p-3 (24) + dot+gap (14) + item gap (8) + time counter (56)
+const LABEL_OVERHEAD_PX = 102
 const CHAR_WIDTH_PX = 7.5 // Inter text-sm average
 
 interface ContentProps {
@@ -136,8 +136,10 @@ function SidebarContent({
   sidebarWidth, hasActivities,
 }: ContentProps) {
   const labelAvailablePx = Math.max(0, sidebarWidth - LABEL_OVERHEAD_PX)
+  // Total timer font scales with sidebar width: large on desktop, compact on narrow panels
+  const totalFontSize = Math.max(14, Math.min(24, Math.round(sidebarWidth * 0.13)))
   return (
-    <div className="flex flex-1 flex-col gap-5 overflow-y-auto">
+    <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
       {/* Date */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted">Today</p>
@@ -149,7 +151,7 @@ function SidebarContent({
       {/* Total */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted">Total</p>
-        <p className="mt-1 font-mono text-2xl font-medium" style={{ color: totalColor(total) }}>
+        <p className="mt-1 font-mono font-medium" style={{ color: totalColor(total), fontSize: totalFontSize }}>
           {formatMs(total)}
         </p>
       </div>
