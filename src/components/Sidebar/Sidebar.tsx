@@ -147,14 +147,16 @@ function SidebarContent({
   // Compact when sidebar is short: replace stacked text buttons with icon row
   const compact = sidebarHeight > 0 && sidebarHeight < 500
   return (
-    <div className={`flex flex-1 flex-col overflow-y-auto ${compact ? 'gap-2' : 'gap-4'}`}>
-      {/* Date */}
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-muted">Today</p>
-        <p className="mt-1 text-sm font-medium text-primary" data-testid="date-display">
-          {todayLabel()}
-        </p>
-      </div>
+    <div className={`flex flex-1 flex-col ${compact ? 'gap-2' : 'gap-4'}`}>
+      {/* Date — hidden in compact to reclaim vertical space */}
+      {!compact && (
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted">Today</p>
+          <p className="mt-1 text-sm font-medium text-primary" data-testid="date-display">
+            {todayLabel()}
+          </p>
+        </div>
+      )}
 
       {/* Total */}
       <div>
@@ -164,27 +166,33 @@ function SidebarContent({
         </p>
       </div>
 
-      {/* Per-tile breakdown — hidden in compact mode (not enough vertical space) */}
-      {hasActivities && !compact && (
-        <div className="flex-1 overflow-y-auto">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted">Activities</p>
-          <ul className="mt-2 space-y-2">
+      {/* Per-tile breakdown — flex-1 + min-h-0 keeps it bounded; scrolls internally */}
+      {hasActivities && (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {!compact && <p className="text-xs font-medium uppercase tracking-wider text-muted">Activities</p>}
+          <ul className={compact ? 'space-y-1' : 'mt-2 space-y-2'}>
             {activities.map((a) => {
               const ms =
                 a.accumulatedMs +
                 (a.isRunning && a.startedAt !== null ? Date.now() - a.startedAt : 0)
+              const label = a.code && a.name.length * CHAR_WIDTH_PX > labelAvailablePx ? a.code : a.name
               return (
-                <li key={a.id} className="flex items-center justify-between gap-2">
-                  <span className="flex min-w-0 items-center gap-1.5 text-sm text-primary">
+                <li key={a.id} className="flex items-center justify-between gap-1">
+                  {!compact && (
                     <span
                       className="inline-block h-2 w-2 shrink-0 rounded-full"
                       style={{ background: a.color }}
                     />
-                    <span className="min-w-0 truncate" title={a.name}>
-                      {a.code && a.name.length * CHAR_WIDTH_PX > labelAvailablePx ? a.code : a.name}
-                    </span>
+                  )}
+                  <span
+                    className={`min-w-0 flex-1 truncate ${compact ? 'text-[11px]' : 'text-sm'} text-primary`}
+                    title={a.name}
+                  >
+                    {label}
                   </span>
-                  <span className="shrink-0 font-mono text-xs text-muted">{formatMs(ms)}</span>
+                  <span className={`shrink-0 font-mono ${compact ? 'text-[10px]' : 'text-xs'} text-muted`}>
+                    {formatMs(ms)}
+                  </span>
                 </li>
               )
             })}
