@@ -33,7 +33,7 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
   const glowBright = hexToRgba(PAUSE_COLOR, 0.75)
 
   // ── Micro tile ────────────────────────────────────────────────────────────
-  const isMicro = tileWidth > 0 && tileHeight > 0 && (tileHeight < 100 || tileWidth < 60)
+  const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 120
   if (isMicro) {
     const dim = Math.min(tileWidth, tileHeight)
     return (
@@ -61,10 +61,17 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
 
   return (
     <article
+      role="button"
+      tabIndex={0}
+      aria-pressed={isIdle}
+      aria-label="Pause tracking"
+      aria-disabled={isIdle}
+      onClick={() => { if (runningActivity) toggleTimer(runningActivity.id) }}
+      onKeyDown={(e) => { if (!isIdle && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (runningActivity) toggleTimer(runningActivity.id) } }}
       className={[
         'relative flex flex-col items-center justify-between overflow-hidden rounded-xl p-3',
-        'transition-all duration-200',
-        isIdle ? 'animate-tile-pulse' : '',
+        'transition-all duration-200 select-none',
+        isIdle ? 'animate-tile-pulse cursor-default' : 'cursor-pointer',
       ].join(' ')}
       style={{
         border: `${isIdle ? '2px' : '1px'} solid ${isIdle ? PAUSE_COLOR : hexToRgba(PAUSE_COLOR, 0.28)}`,
@@ -80,13 +87,10 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         </h2>
       </div>
 
-      {/* Central pause button */}
-      <button
-        onClick={() => runningActivity && toggleTimer(runningActivity.id)}
-        disabled={isIdle}
-        aria-label="Pause tracking"
-        aria-pressed={isIdle}
-        className="flex shrink-0 items-center justify-center rounded-full transition-all duration-200 active:scale-95 disabled:cursor-default"
+      {/* Central visual indicator (not interactive — tile is the tap target) */}
+      <div
+        aria-hidden="true"
+        className="flex shrink-0 items-center justify-center rounded-full transition-all duration-200"
         style={{
           width:    btnSize,
           height:   btnSize,
@@ -94,7 +98,7 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         }}
       >
         <PauseIcon size={iconSize} color={PAUSE_COLOR} />
-      </button>
+      </div>
 
       {/* Bottom status — mirrors ActivityTile layout for visual alignment */}
       <div className="flex w-full flex-col items-center">
