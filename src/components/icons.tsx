@@ -54,6 +54,24 @@ export function PlusIcon({ size, color = 'currentColor' }: IconProps) {
   )
 }
 
+export function UndoIcon({ size, color = 'currentColor' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size} aria-hidden="true" focusable="false">
+      <path d="M3 7v6h6" />
+      <path d="M21 17A9 9 0 0 0 6.07 10.07L3 13" />
+    </svg>
+  )
+}
+
+export function ResetIcon({ size, color = 'currentColor' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size} aria-hidden="true" focusable="false">
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
+    </svg>
+  )
+}
+
 export function DotsIcon({ size, color = 'currentColor' }: IconProps) {
   return (
     <svg

@@ -1,7 +1,7 @@
 import { useRef, useState, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
-import { PlusIcon } from '../icons'
+import { PlusIcon, UndoIcon, ResetIcon } from '../icons'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
 
@@ -33,14 +33,19 @@ export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps)
   const total = totalMs()
 
   const asideRef = useRef<HTMLElement>(null)
-  const [sidebarWidth, setSidebarWidth] = useState(256)
+  const [sidebarWidth,  setSidebarWidth]  = useState(256)
+  const [sidebarHeight, setSidebarHeight] = useState(600)
 
   useLayoutEffect(() => {
     const el = asideRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    if (rect.width > 0) setSidebarWidth(rect.width)
-    const observer = new ResizeObserver(([entry]) => setSidebarWidth(entry.contentRect.width))
+    if (rect.width  > 0) setSidebarWidth(rect.width)
+    if (rect.height > 0) setSidebarHeight(rect.height)
+    const observer = new ResizeObserver(([entry]) => {
+      setSidebarWidth(entry.contentRect.width)
+      setSidebarHeight(entry.contentRect.height)
+    })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
@@ -64,6 +69,7 @@ export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps)
           onAddActivity={onAddActivity}
           addBtnRef={addBtnRef}
           sidebarWidth={sidebarWidth}
+          sidebarHeight={sidebarHeight}
           hasActivities={hasActivities}
         />
       </aside>
@@ -127,19 +133,21 @@ interface ContentProps {
   onAddActivity: () => void
   addBtnRef: React.RefObject<HTMLButtonElement | null>
   sidebarWidth: number
+  sidebarHeight: number
   hasActivities: boolean
 }
 
 function SidebarContent({
   activities, undoSnapshot, total,
   onResetAll, onUndo, onAddActivity, addBtnRef,
-  sidebarWidth, hasActivities,
+  sidebarWidth, sidebarHeight, hasActivities,
 }: ContentProps) {
   const labelAvailablePx = Math.max(0, sidebarWidth - LABEL_OVERHEAD_PX)
-  // Total timer font scales with sidebar width: large on desktop, compact on narrow panels
   const totalFontSize = Math.max(14, Math.min(24, Math.round(sidebarWidth * 0.13)))
+  // Compact when sidebar is short: replace stacked text buttons with icon row
+  const compact = sidebarHeight > 0 && sidebarHeight < 500
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+    <div className={`flex flex-1 flex-col overflow-y-auto ${compact ? 'gap-2' : 'gap-4'}`}>
       {/* Date */}
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-muted">Today</p>
@@ -185,38 +193,74 @@ function SidebarContent({
       )}
 
       {/* Actions */}
-      <div className="mt-auto flex flex-col gap-2">
-        {hasActivities && (
+      {compact ? (
+        /* Compact: icon-only row — saves ~120px vs stacked text buttons */
+        <div className="mt-auto flex gap-2">
+          {hasActivities && (
+            <button
+              ref={addBtnRef}
+              onClick={onAddActivity}
+              aria-label="Add activity"
+              className="flex flex-1 items-center justify-center rounded-lg py-2 text-[#3b82f6] transition-colors hover:bg-white/10"
+              style={{ border: '1px solid rgba(59,130,246,0.4)', minHeight: 36 }}
+            >
+              <PlusIcon size={16} />
+            </button>
+          )}
+          {undoSnapshot && (
+            <button
+              onClick={onUndo}
+              aria-label="Undo reset"
+              className="flex flex-1 items-center justify-center rounded-lg py-2 text-[#3b82f6] transition-colors hover:bg-white/10"
+              style={{ border: '1px solid rgba(59,130,246,0.4)', minHeight: 36 }}
+            >
+              <UndoIcon size={16} />
+            </button>
+          )}
           <button
-            ref={addBtnRef}
-            onClick={onAddActivity}
-            aria-label="Add activity"
-            className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
-            style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+            onClick={onResetAll}
+            aria-label="Reset all"
+            className="flex flex-1 items-center justify-center rounded-lg py-2 text-danger transition-colors hover:bg-white/10"
+            style={{ border: '1px solid rgba(239,68,68,0.4)', minHeight: 36 }}
           >
-            <PlusIcon size={14} />
-            Add activity
+            <ResetIcon size={16} />
           </button>
-        )}
-        {undoSnapshot && (
+        </div>
+      ) : (
+        /* Full: labelled vertical stack */
+        <div className="mt-auto flex flex-col gap-2">
+          {hasActivities && (
+            <button
+              ref={addBtnRef}
+              onClick={onAddActivity}
+              aria-label="Add activity"
+              className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
+              style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+            >
+              <PlusIcon size={14} />
+              Add activity
+            </button>
+          )}
+          {undoSnapshot && (
+            <button
+              onClick={onUndo}
+              aria-label="Undo reset"
+              className="w-full min-h-[48px] rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
+              style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+            >
+              Undo
+            </button>
+          )}
           <button
-            onClick={onUndo}
-            aria-label="Undo reset"
-            className="w-full min-h-[48px] rounded-lg text-sm font-medium text-[#3b82f6] transition-colors hover:bg-white/5"
-            style={{ border: '1px solid rgba(59,130,246,0.4)' }}
+            onClick={onResetAll}
+            aria-label="Reset all"
+            className="w-full min-h-[48px] rounded-lg text-sm font-medium text-danger transition-colors hover:bg-white/5"
+            style={{ border: '1px solid rgba(239,68,68,0.4)' }}
           >
-            Undo
+            Reset all
           </button>
-        )}
-        <button
-          onClick={onResetAll}
-          aria-label="Reset all"
-          className="w-full min-h-[48px] rounded-lg text-sm font-medium text-danger transition-colors hover:bg-white/5"
-          style={{ border: '1px solid rgba(239,68,68,0.4)' }}
-        >
-          Reset all
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   )
 }
