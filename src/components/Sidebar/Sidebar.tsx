@@ -1,6 +1,7 @@
 import { useRef, useState, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { formatMs } from '../../utils/time'
+import { hexToRgba } from '../../utils/color'
 import { PlusIcon, UndoIcon, ResetIcon } from '../icons'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
@@ -185,12 +186,16 @@ function SidebarContent({
                     />
                   )}
                   <span
-                    className={`min-w-0 flex-1 truncate ${compact ? 'text-[11px]' : 'text-sm'} text-primary`}
+                    className={`min-w-0 flex-1 truncate ${compact ? 'text-[11px]' : 'text-sm'} font-medium`}
+                    style={{ color: a.color }}
                     title={a.name}
                   >
                     {label}
                   </span>
-                  <span className={`shrink-0 font-mono ${compact ? 'text-[10px]' : 'text-xs'} text-muted`}>
+                  <span
+                    className={`shrink-0 font-mono ${compact ? 'text-[10px]' : 'text-xs'}`}
+                    style={{ color: hexToRgba(a.color, 0.75) }}
+                  >
                     {formatMs(ms)}
                   </span>
                 </li>
