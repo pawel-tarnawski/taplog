@@ -67,7 +67,7 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
       aria-label="Pause tracking"
       aria-disabled={isIdle}
       onClick={() => { if (runningActivity) toggleTimer(runningActivity.id) }}
-      onKeyDown={(e) => { if (!isIdle && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); runningActivity && toggleTimer(runningActivity.id) } }}
+      onKeyDown={(e) => { if (!isIdle && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (runningActivity) toggleTimer(runningActivity.id) } }}
       className={[
         'relative flex flex-col items-center justify-between overflow-hidden rounded-xl p-3',
         'transition-all duration-200 select-none',
