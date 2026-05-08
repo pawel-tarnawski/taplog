@@ -50,11 +50,11 @@ describe('ActivityTile', () => {
     )
   })
 
-  it('toggle button is at least 80×80px (inline style)', () => {
+  it('visual indicator is sized proportionally to tile', () => {
     const { container } = render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
-    const btn = container.querySelector('[aria-pressed]') as HTMLElement
-    expect(parseInt(btn.style.width)).toBeGreaterThanOrEqual(80)
-    expect(parseInt(btn.style.height)).toBeGreaterThanOrEqual(80)
+    const indicator = container.querySelector('.rounded-full') as HTMLElement
+    expect(parseInt(indicator.style.width)).toBeGreaterThan(0)
+    expect(parseInt(indicator.style.height)).toBeGreaterThan(0)
   })
 
   it('starts tracking when toggle button is clicked', async () => {
@@ -105,20 +105,10 @@ describe('ActivityTile', () => {
     expect(useTaplogStore.getState().undoSnapshot).not.toBeNull()
   })
 
-  it('shows inline rename input on double-click', async () => {
+  it('whole tile acts as the toggle button', async () => {
     render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
-    await userEvent.dblClick(screen.getByText('Work'))
-    expect(screen.getByRole('textbox', { name: /rename activity/i })).toBeInTheDocument()
-  })
-
-  it('saves name on Enter from inline edit', async () => {
-    render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
-    await userEvent.dblClick(screen.getByText('Work'))
-    const input = screen.getByRole('textbox', { name: /rename activity/i })
-    await userEvent.clear(input)
-    await userEvent.type(input, 'Deep Work')
-    await userEvent.keyboard('{Enter}')
-    expect(useTaplogStore.getState().activities[0].name).toBe('Deep Work')
+    await userEvent.click(screen.getByRole('button', { name: /start tracking/i }))
+    expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
   })
 
   it('shows code label when tile is narrow and code is set', () => {
@@ -150,5 +140,25 @@ describe('ActivityTile', () => {
     render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /start tracking/i }))
     expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+  })
+
+  it('activates tile via keyboard Enter', async () => {
+    render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
+    screen.getByRole('button', { name: /start tracking work/i }).focus()
+    await userEvent.keyboard('{Enter}')
+    expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+  })
+
+  it('activates tile via keyboard Space', async () => {
+    render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
+    screen.getByRole('button', { name: /start tracking work/i }).focus()
+    await userEvent.keyboard(' ')
+    expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+  })
+
+  it('⋯ click does not toggle the tile', async () => {
+    render(<ActivityTile activity={base} tileWidth={200} tileHeight={200} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: /activity options/i }))
+    expect(useTaplogStore.getState().activities[0].isRunning).toBe(false)
   })
 })
