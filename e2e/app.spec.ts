@@ -102,14 +102,15 @@ test('day-change resets times but keeps activity names', async ({ page }) => {
   await expect(page.locator('[aria-label^="Timer:"]').first()).toContainText('00:00:00')
 })
 
-test('rename activity via double-click', async ({ page }) => {
+test('rename activity via ⋯ menu', async ({ page }) => {
   await addActivity(page, 'Work')
-  await page.getByRole('heading', { name: 'Work' }).dblclick()
+  await page.getByRole('button', { name: 'Activity options' }).click()
+  await page.getByRole('menuitem', { name: 'Rename' }).click()
 
-  const input = page.getByRole('textbox', { name: 'Rename activity' })
+  const input = page.getByLabel('Activity name')
   await expect(input).toBeVisible()
   await input.fill('Deep Work')
-  await input.press('Enter')
+  await page.getByRole('button', { name: 'Save' }).click()
 
   await expect(page.getByRole('heading', { name: 'Deep Work' })).toBeVisible()
 })
