@@ -56,7 +56,7 @@ test('add 5 tiles → grid reflows without overflow', async ({ page }) => {
   }
 
   for (const name of names) {
-    await expect(page.getByRole('heading', { name })).toBeVisible()
+    await expect(page.getByRole('button', { name: new RegExp(`tracking ${name}`, 'i') })).toBeVisible()
   }
 
   const hasHorizontalOverflow = await page.evaluate(
