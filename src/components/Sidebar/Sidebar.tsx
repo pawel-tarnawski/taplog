@@ -164,8 +164,8 @@ function SidebarContent({
         </p>
       </div>
 
-      {/* Per-tile breakdown */}
-      {hasActivities && (
+      {/* Per-tile breakdown — hidden in compact mode (not enough vertical space) */}
+      {hasActivities && !compact && (
         <div className="flex-1 overflow-y-auto">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">Activities</p>
           <ul className="mt-2 space-y-2">
