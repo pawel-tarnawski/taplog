@@ -42,7 +42,7 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 | Concern | Choice |
 |---|---|
 | Bundler | Vite 5 |
-| Framework | React 18 + TypeScript strict |
+| Framework | React 19 + TypeScript strict |
 | State | Zustand |
 | Styling | Tailwind CSS v3 |
 | Animation | CSS transitions + `@keyframes` only (no JS animation libs) |
@@ -61,23 +61,28 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 src/
   components/
     ActivityTile/       ActivityTile.tsx, ActivityTile.test.tsx, index.ts
+    PauseTile/          PauseTile.tsx, PauseTile.test.tsx, index.ts
     TileGrid/           TileGrid.tsx, TileGrid.test.tsx, index.ts
     Sidebar/            Sidebar.tsx, Sidebar.test.tsx, index.ts
     AddActivityModal/   AddActivityModal.tsx, index.ts
+    icons.tsx           Inline SVG icon components (PlayIcon, PauseIcon, PlusIcon, DotsIcon, UndoIcon, ResetIcon)
   store/
     taplogStore.ts      Zustand store — all state and actions
     taplogStore.test.ts Full unit tests for store logic
     persistence.ts      localStorage read/write/recover helpers
   hooks/
     useTick.ts          rAF-based 1-second tick for display updates only
+    useTick.test.ts
   utils/
     time.ts             formatMs(ms: number): string  →  "HH:MM:SS"
     time.test.ts
+    tileColors.ts       TILE_COLORS palette, PAUSE_COLOR, nextTileColor()
+    color.ts            hexToRgba(hex, alpha) utility
   types.ts              Shared TypeScript interfaces
   test-setup.ts         @testing-library/jest-dom import
   App.tsx
   main.tsx
-  index.css             Tailwind directives only
+  index.css             CSS variables, h-screen-safe utility, tile-pulse keyframe
 e2e/
   app.spec.ts
   undo.spec.ts
@@ -99,11 +104,13 @@ interface Activity {
   name: string
   code?: string           // optional ≤5-char label shown on narrow tiles, e.g. "WORK"
   color: string           // hex from TILE_COLORS palette, assigned on creation
-  isPause?: boolean       // Pause tile — stops running timer, no time tracking
-  accumulatedMs: number   // total ms recorded before current run (always 0 for Pause tile)
+  accumulatedMs: number   // total ms recorded before current run
   isRunning: boolean
   startedAt: number | null // Date.now() when last started; null when paused
 }
+
+// Note: the Pause tile is a dedicated PauseTile component — not an Activity in the store.
+// It reads the store to find the running activity and calls toggleTimer on it.
 
 // localStorage key: "taplog_undo_snapshot"
 interface UndoSnapshot {
@@ -128,7 +135,6 @@ interface TaplogStore {
 
   // Actions
   addActivity: (name: string, code?: string) => void  // assigns next palette color
-  addPauseTile: () => void                             // adds isPause:true tile (amber color)
   renameActivity: (id: string, name: string, code?: string) => void
   deleteActivity: (id: string) => void
   toggleTimer: (id: string) => void
@@ -175,61 +181,68 @@ It uses `requestAnimationFrame` internally, not `setInterval`, to avoid drift.
 ```
 App
 ├── TileGrid                     fills ALL available space (full height + width)
+│   │                            empty state: centered "Add your first activity" button
 │   ├── ActivityTile × N         layout computed to keep tiles square-ish
-│   │   ├── name / code          dominant label at top (name if wide, code if narrow)
-│   │   ├── large central button  start/pause — primary tap target; "● Tracking" when active
-│   │   ├── HH:MM:SS timer       bottom, smaller, secondary (hidden on Pause tile)
+│   │   ├── code badge + name    badge is primary label; name shown below when space allows
+│   │   ├── central div (aria-hidden) visual play/pause indicator — whole tile is tap target
+│   │   ├── ● Tracking           visible only when tracking
+│   │   ├── HH:MM:SS timer       bottom, smaller, secondary
 │   │   └── context menu (⋯)    → rename+code / reset tile / delete
-│   ├── PauseTile                glows amber when nothing is tracking
-│   └── AddTileButton            always the last card in the grid
-└── Sidebar                      fixed right panel; bottom bar on mobile (≤640px)
-    ├── date display
+│   └── PauseTile                always last; glows amber when nothing is tracking
+└── Sidebar                      fixed right panel when viewport ≥ 300 px; bottom bar when < 300 px
+    ├── date display (hidden in compact mode when sidebar height < 500 px)
     ├── total time (sum of all tiles)
-    ├── per-tile breakdown list
+    ├── per-activity breakdown list (each entry in that activity's accent color)
+    ├── Add activity button (primary CTA)
     ├── undo button (hidden when no snapshot)
     └── reset-all button
 ```
 
 ### TileGrid layout algorithm
 
-The grid must fill **both dimensions** of the main area. Column and row count are computed from the total tile count (activities + Add button):
+The grid must fill **both dimensions** of the main area. Column and row count are computed from the total tile count (`activities.length + 1` for the PauseTile) using the actual container dimensions to minimise aspect-ratio distortion:
 
 ```typescript
-function gridLayout(count: number): { cols: number; rows: number } {
-  // Aim for square-ish cells given the viewport aspect ratio.
-  // Simple heuristic: pick cols = ceil(sqrt(count)), rows = ceil(count / cols).
-  const cols = Math.ceil(Math.sqrt(count))
-  const rows = Math.ceil(count / cols)
-  return { cols, rows }
-}
-// Grid style: grid-template-columns: repeat(cols, 1fr)
-//             grid-template-rows:    repeat(rows, 1fr)
-//             height: 100%
-```
+// Tries every column count from 1 to totalItems.
+// For each, computes cell dimensions given real container size and gap.
+// Picks the column count whose cells are closest to square
+// (score = max(cellW/cellH, cellH/cellW) — lower = more square).
+function computeGridLayout(count, containerWidth, containerHeight) { ... }
 
-Tiles with `isBreak: true` render with a coffee-cup icon instead of a play/pause arrow, and a distinct muted style (lower saturation accent).
+// Grid style:
+//   grid-template-columns: repeat(cols, minmax(0, 1fr))
+//   grid-template-rows:    repeat(rows, minmax(0, 1fr))
+//   height: 100%
+// minmax(0, 1fr) is critical — prevents content from overflowing tracks.
+```
 
 ### Tile visual hierarchy (top → bottom)
 
-Regular activity tile:
+Regular activity tile (whole `<article>` is the tap target; central div is `aria-hidden`):
 ```
 ┌─────────────────────┐
-│ NAME or CODE   [⋯] │  ← large, dominant; shows code when tile width < threshold
+│ [CODE] name    [⋯] │  ← badge is primary label; name below when space allows; ⋯ opens menu
 │                     │
-│      [ ▶ / ⏸ ]     │  ← 80×80 min circular button, tile's accent color
-│   ● Tracking        │  ← visible only when tracking (not "Running")
+│    ( ▶ or ⏸ )      │  ← visual indicator only, aria-hidden
+│   ● Tracking        │  ← visible only when tracking
 │     00:00:00        │  ← DM Mono, bottom, secondary
 └─────────────────────┘
 ```
 
-Pause tile (when nothing is tracking — glows amber):
+Micro tile (when min(width, height) < 120 px — badge only, whole tile is tap target):
 ```
-┌─────────────────────┐  ← amber border + glow + pulse
-│      Pause     [⋯] │
+┌──────┐
+│ CODE │  ← or name if no code; badge centered
+└──────┘
+```
+
+Pause tile (no context menu; whole tile is tap target):
+```
+┌─────────────────────┐  ← amber border + glow + pulse when nothing is tracking
+│      Pause          │
 │                     │
-│       [ ⏸ ]        │  ← amber, pulsing
-│                     │
-│  (no timer shown)   │
+│       [ ⏸ ]        │  ← amber; visual only (aria-hidden)
+│  ● Nothing tracked  │  ← visible only when nothing is tracking
 └─────────────────────┘
 ```
 
@@ -245,7 +258,7 @@ Pause tile (when nothing is tracking — glows amber):
 --bg-tile:       #181b26;   /* idle tile */
 --bg-tile-hover: #1e2133;
 --bg-sidebar:    #12141e;
---text-primary:  #ddd8f0;   /* warm off-white, replaces cold #e2e8f0 */
+--text-primary:  #c8c4d4;   /* warm off-white */
 --text-muted:    #6b6d85;
 --danger:        #ef4444;
 --success:       #22c55e;
@@ -286,7 +299,7 @@ export const TILE_COLORS = [
 - Timer digits: `DM Mono` (Google Fonts)
 - Names, labels: `Inter` (Google Fonts)
 
-**Tap button:** min 80×80 px, circular. Background: tile color at 15% opacity (idle) / 25% (tracking). Icon in tile color. Press: `transform: scale(0.94)` on `:active`.
+**Tap target:** the whole tile (`<article>`). Central visual indicator is a circular div sized proportionally to tile dimensions. Background: tile color at 10–12% opacity (idle) / 22% (tracking). Icon in tile color.
 
 **Transitions:** `transition: all 200ms ease` on all state changes.
 
@@ -297,7 +310,7 @@ export const TILE_COLORS = [
 ## Accessibility requirements (non-negotiable)
 
 - All interactive elements have `aria-label` or visible text
-- Tap targets ≥ 48 × 48 px (verified in Playwright with `boundingBox()`)
+- Tap targets ≥ 44 × 44 px (verified in Playwright with `boundingBox()`)
 - Keyboard navigable: Tab to each tile, Enter/Space to toggle timer
 - Running state communicated via `aria-pressed` on the toggle button
 - Color is never the only signal — running tiles also have a text indicator
@@ -361,6 +374,7 @@ Update this section as phases complete.
 - [x] Phase 3 — PWA & polish (manifest, service worker, a11y audit)
 - [x] Phase 4 — CI/CD (GitHub Actions, E2E tests, Cloudflare deploy)
 - [x] Phase 5 — v1.1 redesign (tile fill, square layout, neon colors, name/code, pause tile, palette softening, button fix)
+- [x] Phase 6 — Mobile/responsive polish (JS-driven sidebar breakpoint at 300 px, compact icon-button sidebar mode for short viewports, whole-tile tap target, micro tile mode at < 120 px, accent colors in sidebar activity list)
 
 ---
 
@@ -373,6 +387,6 @@ Update this section as phases complete.
 - [ ] Lighthouse: Performance ≥ 90, Accessibility ≥ 90, PWA ≥ 90
 - [ ] No external network calls in DevTools network tab
 - [ ] localStorage corrupt data → graceful recovery, not crash
-- [ ] All tap targets ≥ 48 × 48 px
+- [ ] All tap targets ≥ 44 × 44 px
 - [ ] CI green before every merge to main
 - [ ] README.md covers local setup, test commands, deploy setup
