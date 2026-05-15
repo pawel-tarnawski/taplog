@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { hexToRgba } from '../../utils/color'
 import { PAUSE_COLOR } from '../../utils/tileColors'
@@ -20,12 +21,12 @@ function pauseScale(w: number, h: number) {
   }
 }
 
-export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
-  const activities = useTaplogStore((s) => s.activities)
+function PauseTileImpl({ tileWidth = 0, tileHeight = 0 }: Props) {
+  // Subscribe only to the running activity's id (a string|null), so this tile
+  // doesn't re-render on every unrelated activity change.
+  const runningId = useTaplogStore((s) => s.activities.find((a) => a.isRunning)?.id ?? null)
   const toggleTimer = useTaplogStore((s) => s.toggleTimer)
-
-  const runningActivity = activities.find((a) => a.isRunning) ?? null
-  const isIdle = runningActivity === null
+  const isIdle = runningId === null
 
   const { btnSize, iconSize, nameSize, dotSize } = pauseScale(tileWidth, tileHeight)
 
@@ -47,10 +48,9 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
         } as React.CSSProperties}
       >
         <button
-          onClick={() => runningActivity && toggleTimer(runningActivity.id)}
+          onClick={() => runningId && toggleTimer(runningId)}
           disabled={isIdle}
           aria-label="Pause tracking"
-          aria-pressed={isIdle}
           className="flex h-full w-full items-center justify-center disabled:cursor-default"
         >
           <PauseIcon size={Math.max(10, Math.round(dim * 0.38))} color={PAUSE_COLOR} />
@@ -62,12 +62,11 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
   return (
     <article
       role="button"
-      tabIndex={0}
-      aria-pressed={isIdle}
+      tabIndex={isIdle ? -1 : 0}
       aria-label="Pause tracking"
       aria-disabled={isIdle}
-      onClick={() => { if (runningActivity) toggleTimer(runningActivity.id) }}
-      onKeyDown={(e) => { if (!isIdle && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (runningActivity) toggleTimer(runningActivity.id) } }}
+      onClick={() => { if (runningId) toggleTimer(runningId) }}
+      onKeyDown={(e) => { if (!isIdle && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (runningId) toggleTimer(runningId) } }}
       className={[
         'relative flex flex-col items-center justify-between overflow-hidden rounded-xl p-3',
         'transition-all duration-200 select-none',
@@ -119,3 +118,5 @@ export function PauseTile({ tileWidth = 0, tileHeight = 0 }: Props) {
     </article>
   )
 }
+
+export const PauseTile = memo(PauseTileImpl)

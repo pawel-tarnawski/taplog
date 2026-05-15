@@ -53,4 +53,22 @@ describe('useTick', () => {
     unmount()
     expect(cancelAnimationFrame).toHaveBeenCalled()
   })
+
+  it('does not schedule RAF when disabled (null interval)', () => {
+    const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame')
+    rafSpy.mockClear()
+    renderHook(() => useTick(null))
+    expect(rafSpy).not.toHaveBeenCalled()
+  })
+
+  it('starts ticking when interval changes from null to a number', () => {
+    const { result, rerender } = renderHook(({ ms }: { ms: number | null }) => useTick(ms), {
+      initialProps: { ms: null as number | null },
+    })
+    expect(result.current).toBe(0)
+    rerender({ ms: 100 })
+    act(() => fireRaf(0))
+    act(() => fireRaf(100))
+    expect(result.current).toBe(1)
+  })
 })

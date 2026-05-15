@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRef } from 'react'
@@ -98,6 +98,8 @@ describe('Sidebar', () => {
 })
 
 describe('Sidebar — compact mode (short viewport)', () => {
+  const compactProps = { ...defaultProps, sidebarWidth: 160, sidebarHeight: 400 }
+
   beforeEach(() => {
     localStorage.clear()
     useTaplogStore.setState({
@@ -106,25 +108,17 @@ describe('Sidebar — compact mode (short viewport)', () => {
       ],
       undoSnapshot: null,
     })
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-      width: 160, height: 400, top: 0, left: 0, bottom: 400, right: 160, x: 0, y: 0,
-      toJSON: () => ({}),
-    })
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   it('shows icon-only Reset button (no text) in compact mode', () => {
-    render(<Sidebar {...defaultProps} />)
+    render(<Sidebar {...compactProps} />)
     const resetBtn = screen.getAllByRole('button', { name: /reset all/i })[0]
     expect(resetBtn).toBeInTheDocument()
     expect(resetBtn).not.toHaveTextContent('Reset all')
   })
 
   it('Reset button is still clickable in compact mode', async () => {
-    render(<Sidebar {...defaultProps} />)
+    render(<Sidebar {...compactProps} />)
     const resetBtn = screen.getAllByRole('button', { name: /reset all/i })[0]
     await userEvent.click(resetBtn)
     expect(useTaplogStore.getState().undoSnapshot).not.toBeNull()
