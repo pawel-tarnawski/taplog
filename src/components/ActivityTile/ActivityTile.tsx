@@ -14,6 +14,7 @@ interface Props {
 }
 
 const TILE_PAD = 24 // p-3 = 12 px × 2 sides
+const LONG_PRESS_MS = 500
 
 function tileScale(tileWidth: number, tileHeight: number, labelLen: number) {
   const d = Math.max(40, Math.min(
@@ -32,13 +33,65 @@ function tileScale(tileWidth: number, tileHeight: number, labelLen: number) {
   }
 }
 
+interface TileMenuProps {
+  onRename: () => void
+  onReset: () => void
+  onDelete: () => void
+  positionClass: string
+}
+
+function TileMenu({ onRename, onReset, onDelete, positionClass }: TileMenuProps) {
+  return (
+    <ul
+      role="menu"
+      className={`absolute z-10 min-w-[130px] overflow-hidden rounded-lg bg-sidebar shadow-lg ${positionClass}`}
+      style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+    >
+      <li>
+        <button
+          role="menuitem"
+          onClick={(e) => { e.stopPropagation(); onRename() }}
+          className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
+        >
+          Rename
+        </button>
+      </li>
+      <li>
+        <button
+          role="menuitem"
+          onClick={(e) => { e.stopPropagation(); onReset() }}
+          className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
+        >
+          Reset tile
+        </button>
+      </li>
+      <li>
+        <button
+          role="menuitem"
+          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-danger transition-colors hover:bg-white/5"
+        >
+          Delete
+        </button>
+      </li>
+    </ul>
+  )
+}
+
 function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
   const toggleTimer    = useTaplogStore((s) => s.toggleTimer)
   const resetActivity  = useTaplogStore((s) => s.resetActivity)
   const deleteActivity = useTaplogStore((s) => s.deleteActivity)
 
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  // Two refs because the menu's positioned ancestor differs between micro
+  // (the whole <article>) and full (the <div> wrapping the ⋯ button).
+  const microRef = useRef<HTMLElement>(null)
+  const fullMenuRef = useRef<HTMLDivElement>(null)
+
+  // Long-press state — used on the micro tile (which has no ⋯ button).
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressFiredRef = useRef(false)
 
   // Only the running tile re-renders each second.
   useTick(activity.isRunning ? 1000 : null)
@@ -65,9 +118,10 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     // pointerdown covers mouse, touch, and pen — `mousedown` alone misses taps
     // on some Android Chromium builds, so the menu wouldn't dismiss outside it.
     function onPointerDown(e: PointerEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
+      const target = e.target as Node
+      const inMicro = microRef.current?.contains(target) ?? false
+      const inFull = fullMenuRef.current?.contains(target) ?? false
+      if (!inMicro && !inFull) setMenuOpen(false)
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
@@ -78,13 +132,29 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     setMenuOpen(false)
   }
 
+  function startLongPress() {
+    longPressFiredRef.current = false
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressFiredRef.current = true
+      setMenuOpen(true)
+    }, LONG_PRESS_MS)
+  }
+
+  function cancelLongPress() {
+    if (longPressTimerRef.current !== null) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
   const ariaLabel = activity.isRunning
     ? `Stop tracking ${activity.name}`
     : `Start tracking ${activity.name}`
 
   // ── Micro tile: whole tile is the tap target, badge only ─────────────────
-  // Raised from 120 → 160: anything below feels cramped with the full layout
-  // (badge + ⋯ + central indicator + tracking dot + timer all sharing space).
+  // Raised from 120 → 160: anything below feels cramped with the full layout.
+  // Micro tiles have no ⋯ button — use long-press (or Shift+F10 / ContextMenu
+  // key on a keyboard) to open the actions menu.
   const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 160
   if (isMicro) {
     const dim = Math.min(tileWidth, tileHeight)
@@ -92,22 +162,58 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     const label = activity.code
     return (
       <article
+        ref={microRef}
         role="button"
         tabIndex={0}
         aria-pressed={activity.isRunning}
         aria-label={ariaLabel}
-        onClick={() => toggleTimer(activity.id)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTimer(activity.id) } }}
-        className={['relative overflow-hidden rounded-lg cursor-pointer select-none transition-all duration-200', activity.isRunning ? 'animate-tile-pulse' : ''].join(' ')}
+        aria-haspopup="menu"
+        onClick={(e) => {
+          if (longPressFiredRef.current) {
+            // Long-press just opened the menu — swallow the trailing click.
+            e.preventDefault()
+            longPressFiredRef.current = false
+            return
+          }
+          if (menuOpen) {
+            // Tap on the tile (outside the menu) while the menu is open: close it without toggling.
+            setMenuOpen(false)
+            return
+          }
+          toggleTimer(activity.id)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
+            e.preventDefault()
+            setMenuOpen(true)
+            return
+          }
+          if (e.key === 'Escape' && menuOpen) {
+            e.preventDefault()
+            setMenuOpen(false)
+            return
+          }
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggleTimer(activity.id)
+          }
+        }}
+        onPointerDown={startLongPress}
+        onPointerUp={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        onContextMenu={(e) => e.preventDefault()}
+        className={['relative rounded-lg cursor-pointer select-none transition-all duration-200', activity.isRunning ? 'animate-tile-pulse' : ''].join(' ')}
         style={{
           border: `${borderWidth} solid ${borderColor}`,
           backgroundColor: 'var(--bg-tile)',
           '--tile-glow-dim':    `0 0 24px ${hexToRgba(color, 0.45)}`,
           '--tile-glow-bright': `0 0 48px ${hexToRgba(color, 0.75)}`,
+          touchAction: 'manipulation',
         } as React.CSSProperties}
         title={activity.name}
       >
-        <div className="flex h-full w-full items-center justify-center">
+        <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-[inherit]">
           <span
             className="rounded font-mono font-bold leading-none"
             style={{
@@ -120,6 +226,14 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
             {label}
           </span>
         </div>
+        {menuOpen && (
+          <TileMenu
+            onRename={() => handleMenuAction(() => onEdit(activity))}
+            onReset={() => handleMenuAction(() => resetActivity(activity.id))}
+            onDelete={() => handleMenuAction(() => deleteActivity(activity.id))}
+            positionClass="right-0 top-full mt-1"
+          />
+        )}
       </article>
     )
   }
@@ -169,7 +283,7 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
           </span>
         </div>
 
-        <div ref={menuRef} className="relative shrink-0">
+        <div ref={fullMenuRef} className="relative shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
             aria-label="Activity options"
@@ -182,39 +296,12 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
           </button>
 
           {menuOpen && (
-            <ul
-              role="menu"
-              className="absolute right-0 top-full z-10 mt-1 min-w-[130px] overflow-hidden rounded-lg bg-sidebar shadow-lg"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              <li>
-                <button
-                  role="menuitem"
-                  onClick={(e) => { e.stopPropagation(); handleMenuAction(() => onEdit(activity)) }}
-                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
-                >
-                  Rename
-                </button>
-              </li>
-              <li>
-                <button
-                  role="menuitem"
-                  onClick={(e) => { e.stopPropagation(); handleMenuAction(() => resetActivity(activity.id)) }}
-                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-primary transition-colors hover:bg-white/5"
-                >
-                  Reset tile
-                </button>
-              </li>
-              <li>
-                <button
-                  role="menuitem"
-                  onClick={(e) => { e.stopPropagation(); handleMenuAction(() => deleteActivity(activity.id)) }}
-                  className="flex min-h-[48px] w-full items-center px-3 text-left text-sm text-danger transition-colors hover:bg-white/5"
-                >
-                  Delete
-                </button>
-              </li>
-            </ul>
+            <TileMenu
+              onRename={() => handleMenuAction(() => onEdit(activity))}
+              onReset={() => handleMenuAction(() => resetActivity(activity.id))}
+              onDelete={() => handleMenuAction(() => deleteActivity(activity.id))}
+              positionClass="right-0 top-full mt-1"
+            />
           )}
         </div>
       </div>

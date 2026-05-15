@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityTile } from './ActivityTile'
 import { useTaplogStore } from '../../store/taplogStore'
@@ -141,6 +141,66 @@ describe('ActivityTile', () => {
     render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
     await userEvent.click(screen.getByRole('button', { name: /start tracking/i }))
     expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+  })
+
+  describe('micro tile actions menu', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('opens the actions menu after a long press', () => {
+      vi.useFakeTimers()
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+      const tile = screen.getByRole('button', { name: /start tracking work/i })
+      fireEvent.pointerDown(tile)
+      act(() => vi.advanceTimersByTime(500)) // LONG_PRESS_MS
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: /rename/i })).toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: /reset tile/i })).toBeInTheDocument()
+      expect(screen.getByRole('menuitem', { name: /delete/i })).toBeInTheDocument()
+    })
+
+    it('a short press toggles the timer (no menu)', () => {
+      vi.useFakeTimers()
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+      const tile = screen.getByRole('button', { name: /start tracking work/i })
+      fireEvent.pointerDown(tile)
+      act(() => vi.advanceTimersByTime(200))
+      fireEvent.pointerUp(tile)
+      fireEvent.click(tile)
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+      expect(useTaplogStore.getState().activities[0].isRunning).toBe(true)
+    })
+
+    it('after long-press, the trailing click does not toggle the timer', () => {
+      vi.useFakeTimers()
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+      const tile = screen.getByRole('button', { name: /start tracking work/i })
+      fireEvent.pointerDown(tile)
+      act(() => vi.advanceTimersByTime(500))
+      fireEvent.pointerUp(tile)
+      fireEvent.click(tile)
+      expect(useTaplogStore.getState().activities[0].isRunning).toBe(false)
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+    })
+
+    it('keyboard Shift+F10 opens the actions menu', async () => {
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+      screen.getByRole('button', { name: /start tracking work/i }).focus()
+      await userEvent.keyboard('{Shift>}{F10}{/Shift}')
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+    })
+
+    it('deletes via the long-press menu', async () => {
+      vi.useFakeTimers()
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
+      const tile = screen.getByRole('button', { name: /start tracking work/i })
+      fireEvent.pointerDown(tile)
+      act(() => vi.advanceTimersByTime(500))
+      vi.useRealTimers()
+      await userEvent.click(screen.getByRole('menuitem', { name: /delete/i }))
+      expect(useTaplogStore.getState().activities).toHaveLength(0)
+    })
   })
 
   it('activates tile via keyboard Enter', async () => {
