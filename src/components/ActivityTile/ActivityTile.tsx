@@ -15,6 +15,8 @@ interface Props {
 
 const TILE_PAD = 24 // p-3 = 12 px × 2 sides
 const LONG_PRESS_MS = 500
+// 3 menuitems × min-h-48 + 2px borders + 4px mt-1 spacing ≈ 154 px. Round up.
+const ESTIMATED_MENU_HEIGHT = 160
 
 function tileScale(tileWidth: number, tileHeight: number, labelLen: number) {
   const d = Math.max(40, Math.min(
@@ -84,6 +86,7 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
   const deleteActivity = useTaplogStore((s) => s.deleteActivity)
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPlacement, setMenuPlacement] = useState<'below' | 'above'>('below')
   // Two refs because the menu's positioned ancestor differs between micro
   // (the whole <article>) and full (the <div> wrapping the ⋯ button).
   const microRef = useRef<HTMLElement>(null)
@@ -132,11 +135,27 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     setMenuOpen(false)
   }
 
+  /** Decide whether to drop the menu down or flip it up, based on the
+   *  tile's position in the viewport. Computed at open time using an
+   *  estimate of the menu height — accurate enough since the menu has
+   *  a fixed number of items at a known minimum row height. */
+  function openMenu() {
+    const el = microRef.current ?? fullMenuRef.current
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - rect.bottom
+      const spaceAbove = rect.top
+      const shouldFlipUp = spaceBelow < ESTIMATED_MENU_HEIGHT && spaceAbove > spaceBelow
+      setMenuPlacement(shouldFlipUp ? 'above' : 'below')
+    }
+    setMenuOpen(true)
+  }
+
   function startLongPress() {
     longPressFiredRef.current = false
     longPressTimerRef.current = window.setTimeout(() => {
       longPressFiredRef.current = true
-      setMenuOpen(true)
+      openMenu()
     }, LONG_PRESS_MS)
   }
 
@@ -185,7 +204,7 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
         onKeyDown={(e) => {
           if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) {
             e.preventDefault()
-            setMenuOpen(true)
+            openMenu()
             return
           }
           if (e.key === 'Escape' && menuOpen) {
@@ -231,7 +250,7 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
             onRename={() => handleMenuAction(() => onEdit(activity))}
             onReset={() => handleMenuAction(() => resetActivity(activity.id))}
             onDelete={() => handleMenuAction(() => deleteActivity(activity.id))}
-            positionClass="right-0 top-full mt-1"
+            positionClass={menuPlacement === 'above' ? 'right-0 bottom-full mb-1' : 'right-0 top-full mt-1'}
           />
         )}
       </article>
@@ -285,7 +304,11 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
 
         <div ref={fullMenuRef} className="relative shrink-0">
           <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              if (menuOpen) setMenuOpen(false)
+              else openMenu()
+            }}
             aria-label="Activity options"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -300,7 +323,7 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
               onRename={() => handleMenuAction(() => onEdit(activity))}
               onReset={() => handleMenuAction(() => resetActivity(activity.id))}
               onDelete={() => handleMenuAction(() => deleteActivity(activity.id))}
-              positionClass="right-0 top-full mt-1"
+              positionClass={menuPlacement === 'above' ? 'right-0 bottom-full mb-1' : 'right-0 top-full mt-1'}
             />
           )}
         </div>

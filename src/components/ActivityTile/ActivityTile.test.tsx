@@ -201,6 +201,33 @@ describe('ActivityTile', () => {
       await userEvent.click(screen.getByRole('menuitem', { name: /delete/i }))
       expect(useTaplogStore.getState().activities).toHaveLength(0)
     })
+
+    it('drops the menu down when the tile is in the top of the viewport', async () => {
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(800)
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        top: 20, bottom: 140, left: 0, right: 120, width: 120, height: 120, x: 0, y: 20, toJSON: () => ({}),
+      })
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={120} onEdit={onEdit} />)
+      screen.getByRole('button', { name: /start tracking work/i }).focus()
+      await userEvent.keyboard('{Shift>}{F10}{/Shift}')
+      const menu = screen.getByRole('menu')
+      expect(menu.className).toContain('top-full')
+      expect(menu.className).not.toContain('bottom-full')
+    })
+
+    it('flips the menu up when the tile is near the bottom of the viewport', async () => {
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(800)
+      // Tile sits at the bottom — only 30 px below it, but 660 px above.
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+        top: 660, bottom: 770, left: 0, right: 120, width: 120, height: 110, x: 0, y: 660, toJSON: () => ({}),
+      })
+      render(<ActivityTile activity={base} tileWidth={120} tileHeight={120} onEdit={onEdit} />)
+      screen.getByRole('button', { name: /start tracking work/i }).focus()
+      await userEvent.keyboard('{Shift>}{F10}{/Shift}')
+      const menu = screen.getByRole('menu')
+      expect(menu.className).toContain('bottom-full')
+      expect(menu.className).not.toContain('top-full')
+    })
   })
 
   it('activates tile via keyboard Enter', async () => {
