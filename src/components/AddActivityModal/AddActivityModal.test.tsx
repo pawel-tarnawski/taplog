@@ -20,12 +20,16 @@ describe('AddActivityModal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('does not submit an empty name', async () => {
-    const onConfirm = vi.fn()
-    render(<AddActivityModal onClose={vi.fn()} onConfirm={onConfirm} />)
+  it('submit is disabled until both name and code are filled', async () => {
+    render(<AddActivityModal onClose={vi.fn()} onConfirm={vi.fn()} />)
     const submit = screen.getByRole('button', { name: /^add$/i })
     expect(submit).toBeDisabled()
-    expect(onConfirm).not.toHaveBeenCalled()
+
+    await userEvent.type(screen.getByLabelText(/activity name/i), 'Work')
+    expect(submit).toBeDisabled()
+
+    await userEvent.type(screen.getByLabelText(/short code/i), 'WORK')
+    expect(submit).not.toBeDisabled()
   })
 
   it('closes on Escape', async () => {
@@ -56,7 +60,7 @@ describe('AddActivityModal', () => {
   })
 
   it('Shift+Tab from first focusable cycles to the last (focus trap)', async () => {
-    render(<AddActivityModal onClose={vi.fn()} onConfirm={vi.fn()} initialName="Work" />)
+    render(<AddActivityModal onClose={vi.fn()} onConfirm={vi.fn()} initialName="Work" initialCode="WORK" />)
     const nameInput = screen.getByLabelText(/activity name/i) as HTMLInputElement
     const submitBtn = screen.getByRole('button', { name: /^add$/i })
     nameInput.focus()

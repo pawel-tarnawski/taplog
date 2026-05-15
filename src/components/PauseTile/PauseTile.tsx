@@ -34,7 +34,9 @@ function PauseTileImpl({ tileWidth = 0, tileHeight = 0 }: Props) {
   const glowBright = hexToRgba(PAUSE_COLOR, 0.75)
 
   // ── Micro tile ────────────────────────────────────────────────────────────
-  const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 120
+  // Raised from 120 → 160 to match ActivityTile — below this the full
+  // layout (label + central icon + status + reserved timer slot) is cramped.
+  const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 160
   if (isMicro) {
     const dim = Math.min(tileWidth, tileHeight)
     return (

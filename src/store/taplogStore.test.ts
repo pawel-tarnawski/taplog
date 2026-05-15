@@ -43,9 +43,19 @@ describe('addActivity', () => {
     expect(typeof activities[0].color).toBe('string')
   })
 
-  it('stores optional code uppercased and truncated to 5 chars', () => {
+  it('stores explicit code uppercased and truncated to 5 chars', () => {
     useTaplogStore.getState().addActivity('Work', 'working')
     expect(useTaplogStore.getState().activities[0].code).toBe('WORKI')
+  })
+
+  it('derives a code from the name when none is supplied', () => {
+    useTaplogStore.getState().addActivity('Deep focus')
+    expect(useTaplogStore.getState().activities[0].code).toBe('DEEP')
+  })
+
+  it('derives a code from the name when an empty/whitespace code is supplied', () => {
+    useTaplogStore.getState().addActivity('Email triage', '   ')
+    expect(useTaplogStore.getState().activities[0].code).toBe('EMAIL')
   })
 
   it('assigns rotating palette colors to successive activities', () => {
@@ -351,7 +361,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', code: 'WORK', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-01', activities }))
     useTaplogStore.setState({ activities })
@@ -364,7 +374,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', code: 'WORK', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-02', activities }))
     useTaplogStore.setState({ activities })
@@ -376,7 +386,7 @@ describe('_checkDayChange', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2024-01-02T12:00:00Z'))
     const activities = [
-      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', code: 'WORK', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     const snapshot = { timestamp: 1, activities: [{ id: '1', accumulatedMs: 5_000 }] }
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: '2024-01-01', activities }))
@@ -389,7 +399,7 @@ describe('_checkDayChange', () => {
 
   it('is a no-op when localStorage has no stored state', () => {
     const activities = [
-      { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
+      { id: '1', name: 'Work', code: 'WORK', color: '#3b82f6', accumulatedMs: 5_000, isRunning: false, startedAt: null },
     ]
     useTaplogStore.setState({ activities })
     useTaplogStore.getState()._checkDayChange()
@@ -409,8 +419,8 @@ describe('totalMs', () => {
   it('sums accumulated ms across all activities', () => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'A', color: '#3b82f6', accumulatedMs: 3_000, isRunning: false, startedAt: null },
-        { id: '2', name: 'B', color: '#a855f7', accumulatedMs: 7_000, isRunning: false, startedAt: null },
+        { id: '1', name: 'A', code: 'A', color: '#3b82f6', accumulatedMs: 3_000, isRunning: false, startedAt: null },
+        { id: '2', name: 'B', code: 'B', color: '#a855f7', accumulatedMs: 7_000, isRunning: false, startedAt: null },
       ],
     })
     expect(useTaplogStore.getState().totalMs()).toBe(10_000)
@@ -421,7 +431,7 @@ describe('totalMs', () => {
     vi.setSystemTime(1_000_000)
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'A', color: '#3b82f6', accumulatedMs: 2_000, isRunning: true, startedAt: 1_000_000 - 3_000 },
+        { id: '1', name: 'A', code: 'A', color: '#3b82f6', accumulatedMs: 2_000, isRunning: true, startedAt: 1_000_000 - 3_000 },
       ],
     })
     vi.setSystemTime(1_001_000)
