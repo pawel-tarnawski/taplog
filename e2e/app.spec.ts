@@ -97,8 +97,8 @@ test('day-change resets times but keeps activity names', async ({ page }) => {
 
   await page.reload()
 
-  // Name must survive
-  await expect(page.getByRole('heading', { name: 'Work' })).toBeVisible()
+  // Name must survive — tile is the toggle button with aria-label "Start tracking Work"
+  await expect(page.getByRole('button', { name: 'Start tracking Work' })).toBeVisible()
   // Time must be zeroed out
   await expect(page.locator('[aria-label^="Timer:"]').first()).toContainText('00:00:00')
 })
@@ -113,7 +113,7 @@ test('rename activity via ⋯ menu', async ({ page }) => {
   await input.fill('Deep Work')
   await page.getByRole('button', { name: 'Save' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Deep Work' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start tracking Deep Work' })).toBeVisible()
 })
 
 test('delete activity via context menu', async ({ page }) => {
@@ -121,5 +121,5 @@ test('delete activity via context menu', async ({ page }) => {
   await page.getByRole('button', { name: 'Activity options' }).click()
   await page.getByRole('menuitem', { name: 'Delete' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Work' })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start tracking Work' })).not.toBeVisible()
 })
