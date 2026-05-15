@@ -8,6 +8,7 @@ import type { Activity } from '../../types'
 const base: Activity = {
   id: 'tile-1',
   name: 'Work',
+  code: 'WORK',
   color: '#3b82f6',
   accumulatedMs: 0,
   isRunning: false,
@@ -130,10 +131,10 @@ describe('ActivityTile', () => {
     expect(screen.getByText('WRK')).toBeInTheDocument()
   })
 
-  it('renders micro tile with name when no code and tile is short', () => {
+  it('micro tile always shows the code (mandatory)', () => {
     render(<ActivityTile activity={base} tileWidth={120} tileHeight={70} onEdit={onEdit} />)
     expect(screen.getByRole('button', { name: /start tracking/i })).toBeInTheDocument()
-    expect(screen.getByText('Work')).toBeInTheDocument()
+    expect(screen.getByText('WORK')).toBeInTheDocument()
   })
 
   it('toggles timer in micro tile mode', async () => {

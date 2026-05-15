@@ -1,7 +1,7 @@
 export interface Activity {
   id: string
   name: string
-  code?: string           // optional ≤5-char short label, shown on narrow tiles
+  code: string            // ≤5-char short label, required; derived from name when blank
   color: string           // hex from TILE_COLORS palette
   accumulatedMs: number
   isRunning: boolean

@@ -60,11 +60,13 @@ export function AddActivityModal({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose])
 
+  const trimmedName = name.trim()
+  const trimmedCode = code.trim().toUpperCase().slice(0, 5)
+  const canSubmit = trimmedName.length > 0 && trimmedCode.length > 0
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmedName = name.trim()
-    if (!trimmedName) return
-    const trimmedCode = code.trim().toUpperCase().slice(0, 5) || undefined
+    if (!canSubmit) return
     onConfirm(trimmedName, trimmedCode)
     onClose()
   }
@@ -88,26 +90,33 @@ export function AddActivityModal({
         <h2 className="mb-4 text-base font-semibold text-primary">{title}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted">Name</label>
+            <label className="mb-1 block text-xs font-medium text-muted">
+              Name <span className="text-danger">*</span>
+            </label>
             <input
               ref={inputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Activity name"
               aria-label="Activity name"
+              aria-required="true"
+              required
               className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm text-primary placeholder:text-muted outline-none focus:ring-1"
               style={{ border: '1px solid rgba(255,255,255,0.1)' }}
             />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted">
-              Short code <span className="text-muted/60">(optional, max 5 chars)</span>
+              Short code <span className="text-danger">*</span>{' '}
+              <span className="text-muted/60">(max 5 chars)</span>
             </label>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.slice(0, 5))}
               placeholder="e.g. WORK"
               aria-label="Short code"
+              aria-required="true"
+              required
               className="w-full rounded-lg bg-white/5 px-3 py-2 text-sm uppercase text-primary placeholder:normal-case placeholder:text-muted outline-none focus:ring-1"
               style={{ border: '1px solid rgba(255,255,255,0.1)' }}
             />
@@ -123,7 +132,7 @@ export function AddActivityModal({
             </button>
             <button
               type="submit"
-              disabled={!name.trim()}
+              disabled={!canSubmit}
               className="min-h-[48px] rounded-lg px-4 text-sm font-medium text-white transition-opacity disabled:opacity-40"
               style={{ background: '#3b82f6' }}
             >

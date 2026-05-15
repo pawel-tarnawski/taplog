@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { nanoid } from 'nanoid'
 import type { Activity, UndoSnapshot } from '../types'
 import { nextTileColor } from '../utils/tileColors'
+import { deriveCode } from '../utils/deriveCode'
 import {
   loadState,
   saveState,
@@ -9,6 +10,11 @@ import {
   saveUndoSnapshot,
   clearUndoSnapshot,
 } from './persistence'
+
+function normalizeCode(name: string, code?: string): string {
+  const trimmed = code?.trim().toUpperCase().slice(0, 5)
+  return trimmed && trimmed.length > 0 ? trimmed : deriveCode(name)
+}
 
 function todayString(): string {
   // Local date, not UTC — the user's "midnight" is their wall-clock midnight,
@@ -46,11 +52,15 @@ function buildInitialState(): Pick<TaplogStore, 'activities' | 'undoSnapshot'> {
     return { activities: [], undoSnapshot: null }
   }
 
-  // Migrate activities that predate the color field
-  const activities = stored.activities.map((a, i) => ({
-    ...a,
-    color: (a as { color?: string }).color ?? nextTileColor(i),
-  }))
+  // Migrate activities that predate the color or required-code fields.
+  const activities: Activity[] = stored.activities.map((a, i) => {
+    const legacyCode = (a as { code?: string }).code
+    return {
+      ...a,
+      color: (a as { color?: string }).color ?? nextTileColor(i),
+      code: legacyCode && legacyCode.length > 0 ? legacyCode : deriveCode(a.name),
+    }
+  })
 
   if (stored.date !== today) {
     const reset = activities.map((a) => ({
@@ -81,11 +91,10 @@ export const useTaplogStore = create<TaplogStore>()((set, get) => ({
   },
 
   addActivity: (name: string, code?: string) => {
-    const trimmedCode = code?.trim().toUpperCase().slice(0, 5) || undefined
     const activity: Activity = {
       id: nanoid(),
       name,
-      code: trimmedCode,
+      code: normalizeCode(name, code),
       color: nextTileColor(get().activities.length),
       accumulatedMs: 0,
       isRunning: false,
@@ -96,10 +105,9 @@ export const useTaplogStore = create<TaplogStore>()((set, get) => ({
   },
 
   renameActivity: (id: string, name: string, code?: string) => {
-    const trimmedCode = code?.trim().toUpperCase().slice(0, 5) || undefined
     set((state) => ({
       activities: state.activities.map((a) =>
-        a.id === id ? { ...a, name, code: trimmedCode } : a,
+        a.id === id ? { ...a, name, code: normalizeCode(name, code) } : a,
       ),
     }))
     get()._persist()

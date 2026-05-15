@@ -38,8 +38,8 @@ describe('TileGrid — with activities', () => {
   beforeEach(() => {
     useTaplogStore.setState({
       activities: [
-        { id: '1', name: 'Work', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null },
-        { id: '2', name: 'Break', color: '#a855f7', accumulatedMs: 0, isRunning: false, startedAt: null },
+        { id: '1', name: 'Work', code: 'WORK', color: '#3b82f6', accumulatedMs: 0, isRunning: false, startedAt: null },
+        { id: '2', name: 'Break', code: 'BREAK', color: '#a855f7', accumulatedMs: 0, isRunning: false, startedAt: null },
       ],
     })
   })

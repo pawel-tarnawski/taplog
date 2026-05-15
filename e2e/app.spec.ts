@@ -6,9 +6,10 @@ test.beforeEach(async ({ page }) => {
   await page.reload()
 })
 
-async function addActivity(page: Page, name: string) {
+async function addActivity(page: Page, name: string, code = name.slice(0, 5).toUpperCase()) {
   await page.getByRole('button', { name: 'Add activity' }).click()
   await page.getByLabel('Activity name').fill(name)
+  await page.getByLabel('Short code').fill(code)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
 }
 

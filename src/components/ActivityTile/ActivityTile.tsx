@@ -48,11 +48,10 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     (activity.isRunning && activity.startedAt !== null ? Date.now() - activity.startedAt : 0)
 
   const d = Math.max(40, Math.min((tileWidth || 160) - TILE_PAD, (tileHeight || 160) - TILE_PAD))
-  const showSecondaryName = !!(activity.code && d >= 90)
   const secondaryNameSize = Math.max(9, Math.min(Math.round(d * 0.075), 13))
 
   const { btnSize, iconSize, nameSize, timerSize, dotSize, menuBtnSize } =
-    tileScale(tileWidth, tileHeight, activity.code ? activity.code.length : activity.name.length)
+    tileScale(tileWidth, tileHeight, activity.code.length)
 
   const color      = activity.color
   const glowDim    = hexToRgba(color, 0.45)
@@ -84,11 +83,13 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
     : `Start tracking ${activity.name}`
 
   // ── Micro tile: whole tile is the tap target, badge only ─────────────────
-  const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 120
+  // Raised from 120 → 160: anything below feels cramped with the full layout
+  // (badge + ⋯ + central indicator + tracking dot + timer all sharing space).
+  const isMicro = tileWidth > 0 && tileHeight > 0 && Math.min(tileWidth, tileHeight) < 160
   if (isMicro) {
     const dim = Math.min(tileWidth, tileHeight)
     const labelSize = Math.max(8, Math.round(dim * 0.22))
-    const label = activity.code ?? activity.name
+    const label = activity.code
     return (
       <article
         role="button"
@@ -144,41 +145,29 @@ function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
         '--tile-glow-bright': `0 0 48px ${glowBright}`,
       } as React.CSSProperties}
     >
-      {/* ── Top row: name/badge + ⋯ menu ──────────────────────────────────── */}
+      {/* ── Top row: badge + name + ⋯ menu ────────────────────────────────── */}
       <div className="flex w-full items-start justify-between gap-1">
-        {activity.code ? (
-          <div className="flex min-w-0 flex-col" style={{ gap: Math.max(2, Math.round(nameSize * 0.2)) }}>
-            <span
-              className="self-start rounded-md font-mono font-bold leading-none"
-              style={{
-                fontSize: nameSize,
-                color,
-                background: hexToRgba(color, 0.2),
-                padding: `${Math.max(2, Math.round(nameSize * 0.2))}px ${Math.max(4, Math.round(nameSize * 0.38))}px`,
-              }}
-              title={activity.name}
-            >
-              {activity.code}
-            </span>
-            {showSecondaryName && (
-              <span
-                className="min-w-0 truncate text-muted"
-                style={{ fontSize: secondaryNameSize }}
-                title={activity.name}
-              >
-                {activity.name}
-              </span>
-            )}
-          </div>
-        ) : (
-          <h2
-            className="min-w-0 flex-1 break-words font-bold leading-tight text-primary line-clamp-2"
-            style={{ fontSize: nameSize }}
+        <div className="flex min-w-0 flex-col" style={{ gap: Math.max(2, Math.round(nameSize * 0.2)) }}>
+          <span
+            className="self-start rounded-md font-mono font-bold leading-none"
+            style={{
+              fontSize: nameSize,
+              color,
+              background: hexToRgba(color, 0.2),
+              padding: `${Math.max(2, Math.round(nameSize * 0.2))}px ${Math.max(4, Math.round(nameSize * 0.38))}px`,
+            }}
+            title={activity.name}
+          >
+            {activity.code}
+          </span>
+          <span
+            className="min-w-0 truncate text-muted"
+            style={{ fontSize: secondaryNameSize }}
             title={activity.name}
           >
             {activity.name}
-          </h2>
-        )}
+          </span>
+        </div>
 
         <div ref={menuRef} className="relative shrink-0">
           <button

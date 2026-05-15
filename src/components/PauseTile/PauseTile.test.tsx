@@ -8,6 +8,7 @@ import type { Activity } from '../../types'
 const activity: Activity = {
   id: 'a1',
   name: 'Work',
+  code: 'WORK',
   color: '#3b82f6',
   accumulatedMs: 0,
   isRunning: false,
