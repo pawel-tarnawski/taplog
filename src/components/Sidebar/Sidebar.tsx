@@ -1,7 +1,6 @@
-import { useRef, useState, useLayoutEffect } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
+import { useTick } from '../../hooks/useTick'
 import { formatMs } from '../../utils/time'
-import { hexToRgba } from '../../utils/color'
 import { PlusIcon, UndoIcon, ResetIcon } from '../icons'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
@@ -20,44 +19,38 @@ function todayLabel(): string {
 
 interface SidebarProps {
   showSidebar: boolean
+  /** Width of the desktop sidebar panel, passed from App. Falls back to a default for tests. */
+  sidebarWidth?: number
+  /** Height available for the sidebar — controls the compact-mode switch. */
+  sidebarHeight?: number
   onAddActivity: () => void
   addBtnRef: React.RefObject<HTMLButtonElement | null>
 }
 
-export function Sidebar({ showSidebar, onAddActivity, addBtnRef }: SidebarProps) {
+export function Sidebar({
+  showSidebar,
+  sidebarWidth = 256,
+  sidebarHeight = 600,
+  onAddActivity,
+  addBtnRef,
+}: SidebarProps) {
   const activities = useTaplogStore((s) => s.activities)
   const undoSnapshot = useTaplogStore((s) => s.undoSnapshot)
   const totalMs = useTaplogStore((s) => s.totalMs)
   const resetAll = useTaplogStore((s) => s.resetAll)
   const undo = useTaplogStore((s) => s.undo)
 
+  // Only tick while something is running — totals are otherwise constant.
+  const anyRunning = activities.some((a) => a.isRunning)
+  useTick(anyRunning ? 1000 : null)
+
   const total = totalMs()
-
-  const asideRef = useRef<HTMLElement>(null)
-  const [sidebarWidth,  setSidebarWidth]  = useState(256)
-  const [sidebarHeight, setSidebarHeight] = useState(600)
-
-  useLayoutEffect(() => {
-    const el = asideRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    if (rect.width  > 0) setSidebarWidth(rect.width)
-    if (rect.height > 0) setSidebarHeight(rect.height)
-    const observer = new ResizeObserver(([entry]) => {
-      setSidebarWidth(entry.contentRect.width)
-      setSidebarHeight(entry.contentRect.height)
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
   const hasActivities = activities.length > 0
 
   return (
     <>
       {/* Desktop: fixed right panel */}
       <aside
-        ref={asideRef}
         className={`fixed right-0 top-0 h-screen-safe w-[20vw] min-w-[160px] max-w-64 flex-col bg-sidebar p-3 ${showSidebar ? 'flex' : 'hidden'}`}
         style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}
       >
@@ -194,7 +187,7 @@ function SidebarContent({
                   </span>
                   <span
                     className={`shrink-0 font-mono ${compact ? 'text-[10px]' : 'text-xs'}`}
-                    style={{ color: hexToRgba(a.color, 0.75) }}
+                    style={{ color: a.color }}
                   >
                     {formatMs(ms)}
                   </span>

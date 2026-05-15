@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import type { Activity } from '../../types'
 import { useTaplogStore } from '../../store/taplogStore'
+import { useTick } from '../../hooks/useTick'
 import { formatMs } from '../../utils/time'
 import { hexToRgba } from '../../utils/color'
 import { PlayIcon, PauseIcon, DotsIcon } from '../icons'
@@ -31,13 +32,16 @@ function tileScale(tileWidth: number, tileHeight: number, labelLen: number) {
   }
 }
 
-export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props) {
+function ActivityTileImpl({ activity, tileWidth, tileHeight, onEdit }: Props) {
   const toggleTimer    = useTaplogStore((s) => s.toggleTimer)
   const resetActivity  = useTaplogStore((s) => s.resetActivity)
   const deleteActivity = useTaplogStore((s) => s.deleteActivity)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Only the running tile re-renders each second.
+  useTick(activity.isRunning ? 1000 : null)
 
   const displayMs =
     activity.accumulatedMs +
@@ -59,13 +63,15 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
 
   useEffect(() => {
     if (!menuOpen) return
-    function onMouseDown(e: MouseEvent) {
+    // pointerdown covers mouse, touch, and pen — `mousedown` alone misses taps
+    // on some Android Chromium builds, so the menu wouldn't dismiss outside it.
+    function onPointerDown(e: PointerEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
       }
     }
-    document.addEventListener('mousedown', onMouseDown)
-    return () => document.removeEventListener('mousedown', onMouseDown)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [menuOpen])
 
   function handleMenuAction(action: () => void) {
@@ -255,3 +261,5 @@ export function ActivityTile({ activity, tileWidth, tileHeight, onEdit }: Props)
     </article>
   )
 }
+
+export const ActivityTile = memo(ActivityTileImpl)

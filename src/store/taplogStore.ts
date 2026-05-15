@@ -11,7 +11,13 @@ import {
 } from './persistence'
 
 function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
+  // Local date, not UTC — the user's "midnight" is their wall-clock midnight,
+  // not 00:00 UTC. Avoid toLocaleDateString (locale-dependent ordering).
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 interface TaplogStore {

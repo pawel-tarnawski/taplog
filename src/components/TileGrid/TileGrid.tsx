@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, useMemo } from 'react'
 import { useTaplogStore } from '../../store/taplogStore'
 import { ActivityTile } from '../ActivityTile'
 import { PauseTile } from '../PauseTile'
@@ -68,6 +68,13 @@ export function TileGrid({ onAddActivity }: Props) {
     return () => observer.disconnect()
   }, [])
 
+  // ── Grid layout (computed unconditionally so hook order is stable) ──────
+  const totalItems = activities.length + 1 // +PauseTile
+  const { cols, rows } = useMemo(
+    () => computeGridLayout(totalItems, containerSize.width, containerSize.height),
+    [totalItems, containerSize.width, containerSize.height],
+  )
+
   // ── Empty state ──────────────────────────────────────────────────────────
   if (activities.length === 0) {
     return (
@@ -84,10 +91,6 @@ export function TileGrid({ onAddActivity }: Props) {
       </div>
     )
   }
-
-  // ── Grid (activities + Pause tile) ───────────────────────────────────────
-  const totalItems = activities.length + 1 // +PauseTile
-  const { cols, rows } = computeGridLayout(totalItems, containerSize.width, containerSize.height)
 
   const tileWidth  = cols > 0 ? (containerSize.width  - (cols - 1) * GAP) / cols : 0
   const tileHeight = rows > 0 ? (containerSize.height - (rows - 1) * GAP) / rows : 0

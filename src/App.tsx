@@ -1,6 +1,5 @@
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, useEffect } from 'react'
 import { useTaplogStore } from './store/taplogStore'
-import { useTick } from './hooks/useTick'
 import { TileGrid } from './components/TileGrid'
 import { Sidebar } from './components/Sidebar'
 import { AddActivityModal } from './components/AddActivityModal'
@@ -14,21 +13,23 @@ function sidebarWidthFor(vw: number) {
 }
 
 export default function App() {
-  useTick()
-
   const addActivity = useTaplogStore((s) => s.addActivity)
+  const checkDayChange = useTaplogStore((s) => s._checkDayChange)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const addBtnRef = useRef<HTMLButtonElement>(null)
 
   const [showSidebar, setShowSidebar] = useState(() => window.innerWidth >= SIDEBAR_BREAKPOINT)
   const [sidebarW, setSidebarW]       = useState(() => sidebarWidthFor(window.innerWidth))
+  const [windowH, setWindowH]         = useState(() => window.innerHeight)
 
   useLayoutEffect(() => {
     const update = () => {
       const vw = window.innerWidth
+      const vh = window.innerHeight
       setShowSidebar(vw >= SIDEBAR_BREAKPOINT)
       setSidebarW(sidebarWidthFor(vw))
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+      setWindowH(vh)
+      document.documentElement.style.setProperty('--app-height', `${vh}px`)
     }
     update()
     window.addEventListener('resize', update)
@@ -38,6 +39,21 @@ export default function App() {
       window.removeEventListener('orientationchange', update)
     }
   }, [])
+
+  // Daily reset: also check when the tab returns to foreground and once a minute,
+  // so the app doesn't accumulate time into the next day if left open overnight.
+  useEffect(() => {
+    checkDayChange()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') checkDayChange()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    const interval = window.setInterval(checkDayChange, 60_000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.clearInterval(interval)
+    }
+  }, [checkDayChange])
 
   return (
     <div className="flex h-screen-safe bg-base">
@@ -49,7 +65,13 @@ export default function App() {
       >
         <TileGrid onAddActivity={() => setAddModalOpen(true)} />
       </main>
-      <Sidebar showSidebar={showSidebar} onAddActivity={() => setAddModalOpen(true)} addBtnRef={addBtnRef} />
+      <Sidebar
+        showSidebar={showSidebar}
+        sidebarWidth={sidebarW}
+        sidebarHeight={windowH}
+        onAddActivity={() => setAddModalOpen(true)}
+        addBtnRef={addBtnRef}
+      />
 
       {addModalOpen && (
         <AddActivityModal
